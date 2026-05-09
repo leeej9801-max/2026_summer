@@ -1,10 +1,12 @@
 import Phaser from 'phaser';
+import { SketchRenderer } from '../renderers/SketchRenderer.ts';
 import { ProgressManager } from '../systems/ProgressManager.ts';
 import { createAnswerInput } from '../ui/createAnswerInput.ts';
 
 export class FinalQuestionScene extends Phaser.Scene {
   private inputElement: Phaser.GameObjects.DOMElement | null = null;
   private resultText: Phaser.GameObjects.Text | null = null;
+  private successGlow: Phaser.GameObjects.Container | null = null;
   private progress = ProgressManager.getInstance();
 
   constructor() {
@@ -13,34 +15,46 @@ export class FinalQuestionScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+    const sketch = new SketchRenderer(this);
+    const campfireRest = sketch.draw('campfireRest', width, height);
+    this.successGlow = campfireRest.successGlow;
 
-    this.drawDimCampfire(width, height);
     this.cameras.main.fadeIn(2200, 0, 0, 0);
 
-    this.add.text(width / 2, height / 2 - 142, 'WHO DO YOU SAY I AM?', {
-      fontSize: '40px',
-      color: '#ffffff',
-      fontStyle: 'bold',
+    this.add.text(width / 2, height * 0.255, 'WHO DO YOU SAY I AM?', {
+      fontSize: '34px',
+      color: '#f6efe8',
       fontFamily: 'serif',
-    }).setOrigin(0.5);
+      fontStyle: 'normal',
+      letterSpacing: 5,
+      shadow: { offsetX: 0, offsetY: 0, color: '#ff7a18', blur: 9, fill: true },
+    }).setOrigin(0.5).setAlpha(0.86);
 
-    this.add.text(width / 2, height / 2 - 90, '너는 나를 누구라 하느냐?', {
-      fontSize: '19px',
-      color: '#b7a99b',
+    this.add.text(width / 2, height * 0.315, '너는 나를 누구라 하느냐?', {
+      fontSize: '18px',
+      color: '#c7b6a4',
       fontFamily: 'serif',
-    }).setOrigin(0.5);
+      fontStyle: 'normal',
+      letterSpacing: 1.4,
+    }).setOrigin(0.5).setAlpha(0.78);
 
-    this.inputElement = createAnswerInput(this, width / 2, height / 2 + 52, {
+    this.inputElement = createAnswerInput(this, width / 2, height - 94, {
       placeholder: '고백을 입력하세요',
       buttonLabel: 'CONFESS',
+      panelWidth: 356,
+      inputWidth: 292,
+      inputFontSize: 16,
+      inputPadding: '10px 12px',
+      buttonFontSize: 12,
+      compact: true,
       onSubmit: (answer) => this.handleAnswer(answer),
     });
 
-    this.resultText = this.add.text(width / 2, height / 2 + 220, '', {
-      fontSize: '20px',
-      color: '#888888',
+    this.resultText = this.add.text(width / 2, height * 0.48, '', {
+      fontSize: '25px',
+      color: '#fff3df',
       align: 'center',
-      wordWrap: { width: 820 },
+      wordWrap: { width: 860 },
       fontFamily: 'serif',
       lineSpacing: 12,
     }).setOrigin(0.5);
@@ -98,6 +112,8 @@ export class FinalQuestionScene extends Phaser.Scene {
 
     g.fillStyle(0x000000, 0.68);
     g.fillRect(0, 0, width, height);
+      shadow: { offsetX: 0, offsetY: 0, color: '#ff8a1e', blur: 13, fill: true },
+    }).setOrigin(0.5).setAlpha(0);
   }
 
   private handleAnswer(answer: string) {
@@ -108,7 +124,7 @@ export class FinalQuestionScene extends Phaser.Scene {
       this.showSuccess();
     } else {
       this.cameras.main.shake(400, 0.003);
-      this.resultText?.setText('불 앞의 정적이 다시 깊어집니다.');
+      this.resultText?.setText('불 앞의 정적이 다시 깊어집니다.').setColor('#8f8379').setFontSize(18).setAlpha(0.86);
     }
   }
 
@@ -117,21 +133,28 @@ export class FinalQuestionScene extends Phaser.Scene {
     this.progress.markGateSolved('final-confession');
     this.progress.markNodeComplete('final-confession');
 
-    this.cameras.main.flash(2200, 255, 245, 225);
+    if (this.successGlow) {
+      this.tweens.add({
+        targets: this.successGlow,
+        alpha: 0.88,
+        scale: 1.16,
+        duration: 2600,
+        ease: 'Sine.easeOut',
+      });
+    }
 
     if (this.resultText) {
       this.resultText.setText('“주는 그리스도시요 살아 계신 하나님의 아들이시니이다”\n(마태복음 16:16)');
-      this.resultText.setColor('#ffffff');
+      this.resultText.setColor('#fff7e8');
       this.resultText.setFontSize(26);
+      this.resultText.setScale(0.96);
+      this.tweens.add({
+        targets: this.resultText,
+        alpha: 1,
+        scale: 1,
+        duration: 2400,
+        ease: 'Sine.easeOut',
+      });
     }
-
-    this.time.delayedCall(5200, () => {
-      this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 82, '그 길은 처음부터 당신을 기다리고 있었습니다.', {
-        fontSize: '16px',
-        color: '#766b61',
-        fontStyle: 'italic',
-        fontFamily: 'serif',
-      }).setOrigin(0.5);
-    });
   }
 }
