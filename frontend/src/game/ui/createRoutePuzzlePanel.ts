@@ -1,38 +1,204 @@
 import Phaser from 'phaser';
+import { RouteTraceFragment, RouteTraceManager } from '../systems/RouteTraceManager.ts';
+import { createAnswerInput } from './createAnswerInput.ts';
+
+type RoutePuzzlePanelOptions = {
+  prompt: string;
+  description?: string;
+  onSubmit: (answer: string) => void;
+};
+
+type RoutePuzzlePanel = {
+  container: Phaser.GameObjects.Container;
+  answerElement: Phaser.GameObjects.DOMElement;
+};
+
+type FragmentView = {
+  fragment: RouteTraceFragment;
+  piece: Phaser.GameObjects.Container;
+  paper: Phaser.GameObjects.Graphics;
+  routeInk: Phaser.GameObjects.Graphics;
+  label: Phaser.GameObjects.Text;
+  clicks: number;
+};
+
+const normalizeAngle = (angle: number) => ((angle % 360) + 360) % 360;
+
+const isFragmentAligned = (view: FragmentView) => (
+  normalizeAngle(view.piece.angle) === normalizeAngle(view.fragment.targetRotation)
+);
+
+const drawPaperFragment = (
+  scene: Phaser.Scene,
+  fragment: RouteTraceFragment,
+  collected: boolean,
+): { paper: Phaser.GameObjects.Graphics; routeInk: Phaser.GameObjects.Graphics } => {
+  const paper = scene.add.graphics();
+  const routeInk = scene.add.graphics();
+  const paperAlpha = collected ? 0.95 : 0.22;
+  const edgeAlpha = collected ? 0.85 : 0.24;
+
+  paper.fillStyle(0x2a2117, paperAlpha);
+  paper.beginPath();
+  paper.moveTo(-42, -35);
+  paper.lineTo(33, -40);
+  paper.lineTo(45, -8);
+  paper.lineTo(31, 39);
+  paper.lineTo(-37, 31);
+  paper.lineTo(-47, -6);
+  paper.closePath();
+  paper.fillPath();
+  paper.lineStyle(2, 0x8c7658, edgeAlpha);
+  paper.strokePath();
+
+  paper.lineStyle(1, 0x17120d, collected ? 0.62 : 0.28);
+  paper.lineBetween(-29, -18, 19, -25);
+  paper.lineBetween(-34, 2, 31, -5);
+  paper.lineBetween(-22, 20, 24, 16);
+  paper.lineStyle(2, 0xb09a73, collected ? 0.34 : 0.12);
+  paper.lineBetween(-33, -28, -7, -8);
+  paper.lineBetween(12, 10, 34, 28);
+
+  routeInk.lineStyle(6, 0xf4d58d, collected ? 0.18 : 0.04);
+  if (fragment.routeLine === 'vertical') {
+    routeInk.lineBetween(0, -34, 0, 34);
+  } else {
+    routeInk.lineBetween(-34, 0, 34, 0);
+  }
+  routeInk.lineStyle(2, 0xffffff, collected ? 0.1 : 0.02);
+  if (fragment.routeLine === 'vertical') {
+    routeInk.lineBetween(0, -26, 0, 26);
+  } else {
+    routeInk.lineBetween(-26, 0, 26, 0);
+  }
+
+  return { paper, routeInk };
+};
+
+const updateRecognitionState = (scene: Phaser.Scene, views: FragmentView[], statusText: Phaser.GameObjects.Text) => {
+  const touched = views.filter((view) => view.clicks > 0).length;
+  const aligned = views.filter(isFragmentAligned).length;
+
+  views.forEach((view) => {
+    const isAligned = isFragmentAligned(view);
+    view.paper.setAlpha(view.fragment.collected ? 1 : 0.28);
+    view.routeInk.setAlpha(view.fragment.collected ? Math.min(0.28 + view.clicks * 0.22, 1) : 0.12);
+    view.label.setText(view.clicks === 0 ? view.fragment.clueLabel : '길의 흔적?');
+    view.label.setColor(isAligned ? '#f4d58d' : '#c8b99e');
+
+    if (isAligned) {
+      scene.tweens.add({ targets: view.paper, alpha: 1, duration: 380, ease: 'Sine.easeOut' });
+      scene.tweens.add({ targets: view.routeInk, alpha: 0.92, duration: 380, ease: 'Sine.easeOut' });
+    }
+  });
+
+  if (aligned === views.length) {
+    statusText.setText('조각의 짧은 선들이 하나의 길로 겹쳐 보입니다.');
+    statusText.setColor('#f4d58d');
+    return;
+  }
+
+  if (touched === 0) {
+    statusText.setText('처음에는 낡은 종이 파편과 긁힌 자국처럼만 보입니다.');
+    statusText.setColor('#8c8374');
+    return;
+  }
+
+  statusText.setText('돌릴수록 긁힌 자국 사이에서 길의 흔적이 드러납니다.');
+  statusText.setColor('#c8b99e');
+};
 
 export const createRoutePuzzlePanel = (
   scene: Phaser.Scene,
   x: number,
   y: number,
-): Phaser.GameObjects.Container => {
+  options: RoutePuzzlePanelOptions,
+): RoutePuzzlePanel => {
+  const routeTraceManager = RouteTraceManager.getInstance();
+  if (!routeTraceManager.isRoutePuzzleUnlocked()) {
+    throw new Error('Route puzzle panel can only be opened at stage4-route-gate.');
+  }
+
+  const fragments = routeTraceManager.getCollectedFragments();
+  const collectedFragments = Object.values(fragments);
   const container = scene.add.container(x, y);
-  const panel = scene.add.rectangle(0, 0, 500, 190, 0x070707, 0.86).setStrokeStyle(1, 0x444444);
-  const title = scene.add.text(0, -74, '경로 조각', {
+  const panel = scene.add.rectangle(0, 0, 610, 480, 0x070707, 0.92).setStrokeStyle(2, 0x4d4334);
+  const title = scene.add.text(0, -186, '경로 조각', {
     fontSize: '17px',
     color: '#d8d8d8',
     fontFamily: 'serif',
+    letterSpacing: 2,
   }).setOrigin(0.5);
-  const note = scene.add.text(0, 72, '※ 전체 지도는 없다. 조각의 기억만 맞춘다.', {
-    fontSize: '13px',
-    color: '#777777',
+  const question = scene.add.text(0, -154, options.prompt, {
+    fontSize: '27px',
+    color: '#ffffff',
+    fontFamily: 'serif',
+  }).setOrigin(0.5);
+  const description = scene.add.text(0, -120, options.description || '클릭으로 조각을 90도씩 돌린 뒤 떠오르는 모양을 입력하세요.', {
+    fontSize: '15px',
+    color: '#a9a9a9',
+    align: 'center',
+    fontFamily: 'sans-serif',
+    wordWrap: { width: 540 },
+  }).setOrigin(0.5);
+  const board = scene.add.rectangle(0, -8, 286, 246, 0x0d0b08, 0.98).setStrokeStyle(1, 0x33291d);
+  const statusText = scene.add.text(0, 132, '', {
+    fontSize: '14px',
+    color: '#8c8374',
+    align: 'center',
     fontFamily: 'sans-serif',
   }).setOrigin(0.5);
 
-  container.add([panel, title, note]);
+  container.add([panel, title, question, description, board, statusText]);
 
-  const labels = ['조각 A', '조각 B', '조각 C', '조각 D'];
-  labels.forEach((label, index) => {
-    const px = -165 + index * 110;
-    const piece = scene.add.rectangle(px, -8, 74, 74, 0x101010, 1).setStrokeStyle(2, 0x777777);
-    const mark = scene.add.text(px, -8, label, { fontSize: '13px', color: '#bbbbbb', fontFamily: 'sans-serif' }).setOrigin(0.5);
-    piece.setInteractive({ useHandCursor: true });
+  const fragmentViews = collectedFragments.map((fragment) => {
+    const piece = scene.add.container(fragment.position.x, fragment.position.y);
+    piece.setAngle(fragment.initialRotation);
+    const { paper, routeInk } = drawPaperFragment(scene, fragment, fragment.collected);
+    const label = scene.add.text(0, 52, fragment.clueLabel, {
+      fontSize: '10px',
+      color: '#c8b99e',
+      align: 'center',
+      fontFamily: 'sans-serif',
+    }).setOrigin(0.5);
+
+    piece.add([paper, routeInk, label]);
+    piece.setSize(92, 92);
+    piece.setInteractive(new Phaser.Geom.Rectangle(-46, -46, 92, 92), Phaser.Geom.Rectangle.Contains);
+    container.add(piece);
+
+    const view: FragmentView = { fragment, piece, paper, routeInk, label, clicks: 0 };
     piece.on('pointerdown', () => {
-      piece.angle += 90;
-      mark.angle += 90;
-      piece.setStrokeStyle(2, 0x9f8cff);
+      if (!fragment.collected) return;
+      view.clicks += 1;
+      scene.tweens.add({ targets: piece, angle: piece.angle + 90, duration: 180, ease: 'Cubic.easeOut' });
+      scene.tweens.add({ targets: piece, scale: 1.08, yoyo: true, duration: 120, ease: 'Sine.easeInOut' });
+      scene.time.delayedCall(190, () => updateRecognitionState(scene, fragmentViews, statusText));
     });
-    container.add([piece, mark]);
+
+    return view;
   });
 
-  return container;
+  const missingCount = fragmentViews.filter((view) => !view.fragment.collected).length;
+  if (missingCount > 0) {
+    statusText.setText(`아직 회수되지 않은 조각이 ${missingCount}개 있습니다.`);
+    statusText.setColor('#ff9f9f');
+  } else {
+    updateRecognitionState(scene, fragmentViews, statusText);
+  }
+
+  const answerElement = createAnswerInput(scene, x, y + 188, {
+    placeholder: '예: 십자가 / CROSS / THE CROSS',
+    buttonLabel: '정답 확인',
+    onSubmit: options.onSubmit,
+  });
+
+  const note = scene.add.text(0, 174, 'MVP: 드래그 없이 클릭 회전과 정답 입력만 사용합니다.', {
+    fontSize: '12px',
+    color: '#6f675f',
+    fontFamily: 'sans-serif',
+  }).setOrigin(0.5);
+  container.add(note);
+
+  return { container, answerElement };
 };

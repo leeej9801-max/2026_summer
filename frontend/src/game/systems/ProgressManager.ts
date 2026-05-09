@@ -1,5 +1,6 @@
 import { FIRST_NODE_ID } from '../data/storyNodes.ts';
 import { GameProgress } from '../types/story.types.ts';
+import { RouteTraceManager } from './RouteTraceManager.ts';
 
 const STORAGE_KEY = 'road_game_progress_v2';
 
@@ -8,6 +9,7 @@ const emptyProgress = (): GameProgress => ({
   completedNodeIds: [],
   usedHintIds: [],
   solvedGateIds: [],
+  routeFragmentIds: [],
 });
 
 export class ProgressManager {
@@ -52,6 +54,17 @@ export class ProgressManager {
     return this.progress.solvedGateIds.includes(nodeId);
   }
 
+  public collectRouteFragment(fragmentId: string) {
+    if (!this.progress.routeFragmentIds.includes(fragmentId)) {
+      this.progress.routeFragmentIds.push(fragmentId);
+      this.save();
+    }
+  }
+
+  public getRouteFragmentIds(): string[] {
+    return [...this.progress.routeFragmentIds];
+  }
+
   public markHintUsed(hintId: string) {
     if (!this.progress.usedHintIds.includes(hintId)) {
       this.progress.usedHintIds.push(hintId);
@@ -63,9 +76,14 @@ export class ProgressManager {
     return [...this.progress.usedHintIds];
   }
 
+  public getCompletedNodeIds(): string[] {
+    return [...this.progress.completedNodeIds];
+  }
+
   public reset() {
     this.progress = emptyProgress();
     this.save();
+    RouteTraceManager.getInstance().reset();
   }
 
   private save() {
@@ -92,6 +110,7 @@ export class ProgressManager {
         completedNodeIds: parsed.completedNodeIds || [],
         usedHintIds: parsed.usedHintIds || [],
         solvedGateIds: parsed.solvedGateIds || [],
+        routeFragmentIds: parsed.routeFragmentIds || [],
       };
     } catch {
       this.progress = emptyProgress();

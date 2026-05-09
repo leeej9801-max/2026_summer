@@ -3,6 +3,36 @@ export type StoryNodeType = 'cutscene' | 'interaction' | 'puzzle' | 'routePuzzle
 export type InteractionType = 'answer' | 'physicalAction' | 'choice' | 'routePuzzle' | 'messageInput';
 
 export type CaptionType = 'inner' | 'system' | 'hint' | 'none';
+export type StoryNodeType =
+  | 'cutscene'
+  | 'interaction'
+  | 'routePuzzle'
+  | 'puzzle'
+  | 'transition'
+  | 'final';
+
+export type InteractionType = 'answer' | 'physicalAction' | 'choice' | 'routePuzzle' | 'messageInput';
+
+export type CaptionType = 'system' | 'inner' | 'hint' | 'none';
+
+export type PromptPlacement = 'bottom' | 'object' | 'panel';
+
+export type WorldLayout =
+  | 'emptyRoad'
+  | 'roadWithDistantLight'
+  | 'oldDoorApproach'
+  | 'oldDoorInterior'
+  | 'oldDoorReturn'
+  | 'glamourDoorApproach'
+  | 'glamourDoorInterior'
+  | 'glamourDoorReturn'
+  | 'stormRoad'
+  | 'collapsedRoad'
+  | 'lightRecovery'
+  | 'runToLight'
+  | 'campfireArrival'
+  | 'campfireRest'
+  | 'campfire';
 
 export type CharacterPose =
   | 'none'
@@ -70,10 +100,19 @@ export type CaptionLine = {
   maxVisibleMs?: number;
 };
 
+export type PromptLine = {
+  text: string;
+  placement: PromptPlacement;
+  targetX?: number;
+  targetY?: number;
+};
+
 export type CutsceneShot = {
   id: string;
   worldLayout: WorldLayoutKey;
   backgroundKey?: string;
+  worldLayout: WorldLayout;
+  backgroundKey: string;
   characterPose?: CharacterPose;
   characterX?: number;
   characterY?: number;
@@ -88,15 +127,22 @@ export type CutsceneShot = {
   autoNext?: boolean;
 };
 
+export type RouteFragmentReward = {
+  fragmentKey: string;
+};
+
 export type InteractionGate = {
   type: InteractionType;
   prompt: string;
+  shortPrompt?: string;
   description?: string;
   shortPrompt?: string;
   routeFragmentReward?: string;
   answerKeys?: string[];
   hintIds?: string[];
   successNodeId: string;
+  routeFragmentReward?: RouteFragmentReward;
+  routeFragmentReward?: string;
   failMessage?: string;
 };
 
@@ -123,4 +169,5 @@ export type GameProgress = {
   completedNodeIds: string[];
   usedHintIds: string[];
   solvedGateIds: string[];
+  routeFragmentIds: string[];
 };
