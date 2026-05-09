@@ -1,0 +1,32 @@
+export const AssetKeys = {
+  Backgrounds: {
+    EmptyRoad: 'bg_empty_road',
+    RoadDistantLight: 'bg_road_distant_light',
+    LongRoad: 'bg_long_road',
+    OldDoorRoad: 'bg_old_door_road',
+    GlamourDoorRoad: 'bg_glamour_door_road',
+    StormRoad: 'bg_storm_road',
+    CollapsedRoad: 'bg_collapsed_road',
+    CampfireEmpty: 'bg_campfire_empty',
+    CampfireFinal: 'bg_campfire_final',
+  },
+  Characters: {
+    Stand: 'char_stand',
+    Walk: 'char_walk',
+    Tired: 'char_tired',
+    Collapsed: 'char_collapsed',
+    LookUp: 'char_look_up',
+    Run: 'char_run',
+    SitBack: 'char_sit_back',
+  },
+  Objects: {
+    DistantLight: 'obj_distant_light',
+    OldDoor: 'obj_old_door',
+    GlamourDoor: 'obj_glamour_door',
+    StormOverlay: 'obj_storm_overlay',
+    Campfire: 'obj_campfire',
+    WaitingFigureBack: 'obj_waiting_figure_back',
+    Log: 'obj_log',
+    Blanket: 'obj_blanket',
+  },
+};
