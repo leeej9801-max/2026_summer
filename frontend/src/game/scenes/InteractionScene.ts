@@ -28,60 +28,61 @@ export class InteractionScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     this.drawBackground();
 
-    this.add.text(width / 2, 78, this.node.title, {
-      fontSize: '30px',
-      color: '#f0f0f0',
+    this.add.text(width / 2, 108, this.node.title, {
+      fontSize: '28px',
+      color: '#d8d8d8',
       fontFamily: 'serif',
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 132, '현실 단서를 확인하세요', {
+    this.add.text(width / 2, 166, 'INTERACTION GATE', {
       fontSize: '18px',
       color: '#f4d58d',
       fontFamily: 'sans-serif',
+      letterSpacing: 3,
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 190, this.node.interaction.prompt, {
-      fontSize: this.node.interaction.type === 'routePuzzle' ? '34px' : '28px',
+    this.add.text(width / 2, 230, this.node.interaction.prompt, {
+      fontSize: this.node.interaction.type === 'routePuzzle' ? '42px' : '38px',
       color: '#ffffff',
       align: 'center',
       fontFamily: 'serif',
-      wordWrap: { width: 760 },
+      wordWrap: { width: 900 },
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, 246, this.node.interaction.description || '', {
-      fontSize: '16px',
-      color: '#aaaaaa',
+    this.add.text(width / 2, 304, this.node.interaction.description || '', {
+      fontSize: '21px',
+      color: '#d0d0d0',
       align: 'center',
       fontFamily: 'sans-serif',
-      wordWrap: { width: 780 },
-      lineSpacing: 7,
+      wordWrap: { width: 860 },
+      lineSpacing: 10,
     }).setOrigin(0.5);
 
     if (this.node.interaction.type === 'routePuzzle') {
-      createRoutePuzzlePanel(this, width / 2, 376);
+      createRoutePuzzlePanel(this, width / 2, 430);
     } else {
-      this.drawPhysicalCue(width / 2, 364);
+      this.drawPhysicalCue(width / 2, 430);
     }
 
-    this.answerElement = createAnswerInput(this, width / 2, height - 180, {
+    this.answerElement = createAnswerInput(this, width / 2, height - 142, {
       placeholder: this.node.interaction.type === 'physicalAction' ? 'START 또는 시작' : '정답을 입력하세요',
       buttonLabel: this.node.interaction.type === 'messageInput' ? '전달하기' : '정답 확인',
       onSubmit: (answer) => this.handleSubmit(answer),
     });
 
     const hints = getHintsByIds(this.node.interaction.hintIds);
-    createHintPanel(this, width - 270, height - 130, {
+    createHintPanel(this, width - 260, height - 116, {
       hints,
       usedHintIds: this.interactionManager.getUsedHintIds(),
       onUseHint: (hintId) => this.interactionManager.markHintUsed(hintId),
     });
 
-    this.feedbackText = this.add.text(width / 2, height - 58, '', {
-      fontSize: '16px',
+    this.feedbackText = this.add.text(width / 2, height - 34, '', {
+      fontSize: '22px',
       color: '#ff9f9f',
       align: 'center',
       fontFamily: 'sans-serif',
-      wordWrap: { width: 760 },
+      wordWrap: { width: 900 },
     }).setOrigin(0.5);
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
@@ -93,29 +94,31 @@ export class InteractionScene extends Phaser.Scene {
     const cold = this.node.stageId === 'stage-2' || this.node.stageId === 'stage-4';
     g.fillStyle(cold ? 0x050610 : 0x070707, 1);
     g.fillRect(0, 0, width, height);
-    g.fillStyle(0x000000, 0.58);
-    g.fillRoundedRect(width / 2 - 470, 42, 940, height - 84, 18);
-    g.lineStyle(1, cold ? 0x4840a8 : 0x333333, 0.8);
-    g.strokeRoundedRect(width / 2 - 470, 42, 940, height - 84, 18);
+    g.fillStyle(0x000000, 0.22);
+    g.fillRect(0, 0, width, height);
+    g.fillStyle(0x000000, 0.84);
+    g.fillRoundedRect(width / 2 - 520, 72, 1040, height - 178, 24);
+    g.lineStyle(3, cold ? 0x6d5cff : 0xf4d58d, 0.62);
+    g.strokeRoundedRect(width / 2 - 520, 72, 1040, height - 178, 24);
   }
 
   private drawPhysicalCue(x: number, y: number) {
     const g = this.add.graphics();
-    g.fillStyle(0x101010, 0.95);
-    g.fillRoundedRect(x - 210, y - 58, 420, 116, 14);
-    g.lineStyle(1, 0x555555, 0.8);
-    g.strokeRoundedRect(x - 210, y - 58, 420, 116, 14);
-    this.add.text(x, y - 16, '현실 퍼즐 구간', {
-      fontSize: '20px',
+    g.fillStyle(0x101010, 0.96);
+    g.fillRoundedRect(x - 300, y - 76, 600, 152, 18);
+    g.lineStyle(2, 0x777777, 0.9);
+    g.strokeRoundedRect(x - 300, y - 76, 600, 152, 18);
+    this.add.text(x, y - 24, '현실 퍼즐 구간', {
+      fontSize: '30px',
       color: '#dddddd',
       fontFamily: 'serif',
     }).setOrigin(0.5);
-    this.add.text(x, y + 24, '소품 · 카드 · 문장 조각을 확인한 뒤\n아래 입력창으로 웹을 반응시키세요.', {
-      fontSize: '14px',
-      color: '#888888',
+    this.add.text(x, y + 30, '소품 · 카드 · 문장 조각을 확인한 뒤\n아래 입력창으로 웹을 반응시키세요.', {
+      fontSize: '21px',
+      color: '#c6c6c6',
       align: 'center',
       fontFamily: 'sans-serif',
-      lineSpacing: 5,
+      lineSpacing: 8,
     }).setOrigin(0.5);
   }
 
