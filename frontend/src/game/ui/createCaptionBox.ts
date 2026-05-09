@@ -10,16 +10,18 @@ export const createCaptionBox = (
   const container = scene.add.container(0, 0);
   if (!caption || caption.type === 'none' || caption.text.trim() === '') return container;
 
-  const color = caption.type === 'prompt' ? '#d8d8d8' : caption.type === 'system' ? '#b8b8b8' : '#eeeeee';
-  const box = scene.add.rectangle(width / 2, height - 72, width - 300, 86, 0x000000, 0.48)
-    .setStrokeStyle(1, 0x333333, 0.7);
-  const text = scene.add.text(width / 2, height - 72, caption.text, {
-    fontSize: caption.type === 'prompt' ? '20px' : '19px',
+  const color = caption.type === 'prompt' ? '#ffffff' : caption.type === 'system' ? '#f4d58d' : '#ffffff';
+  const boxHeight = caption.type === 'inner' ? 132 : 120;
+  const boxY = height - boxHeight / 2 - 28;
+  const box = scene.add.rectangle(width / 2, boxY, width - 120, boxHeight, 0x000000, 0.78)
+    .setStrokeStyle(3, caption.type === 'system' ? 0xf4d58d : 0xffffff, 0.42);
+  const text = scene.add.text(width / 2, boxY, caption.text, {
+    fontSize: caption.type === 'prompt' ? '32px' : '34px',
     color,
     align: 'center',
-    wordWrap: { width: width - 360 },
+    wordWrap: { width: width - 200 },
     fontFamily: 'serif',
-    lineSpacing: 8,
+    lineSpacing: 12,
   }).setOrigin(0.5);
 
   container.add([box, text]);
