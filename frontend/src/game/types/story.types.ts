@@ -8,7 +8,9 @@ export type StoryNodeType =
 
 export type InteractionType = 'answer' | 'physicalAction' | 'choice' | 'routePuzzle' | 'messageInput';
 
-export type CaptionType = 'system' | 'inner' | 'prompt' | 'none';
+export type CaptionType = 'system' | 'inner' | 'hint' | 'none';
+
+export type PromptPlacement = 'bottom' | 'object' | 'panel';
 
 export type WorldLayout =
   | 'emptyRoad'
@@ -64,6 +66,13 @@ export type CaptionLine = {
   maxVisibleMs?: number;
 };
 
+export type PromptLine = {
+  text: string;
+  placement: PromptPlacement;
+  targetX?: number;
+  targetY?: number;
+};
+
 export type CutsceneShot = {
   id: string;
   worldLayout: WorldLayout;
@@ -76,6 +85,7 @@ export type CutsceneShot = {
   camera?: CameraCue;
   durationMs?: number;
   caption?: CaptionLine;
+  prompt?: PromptLine;
   soundCue?: string;
   autoNext?: boolean;
 };

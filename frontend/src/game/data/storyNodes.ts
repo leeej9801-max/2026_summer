@@ -75,6 +75,9 @@ export const storyNodes: StoryNode[] = [
     title: '첫 번째 문 / 발견',
     nextNodeId: 'stage1-faith-gate',
     shots: [
+      { id: '1-1-1', backgroundKey: 'road', characterPose: 'walk', characterX: 0.38, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '길은 조용했다.' } },
+      { id: '1-1-2', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.44, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '익숙한 문이었다.\n그래서 더 낯설었다.' } },
+      { id: '1-1-3', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.5, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }], caption: { type: 'inner', text: '익숙한 문이었다.' }, prompt: { text: '문은 대답을 기다렸다.', placement: 'object', targetX: 0.69, targetY: 0.42 } },
       {
         id: '1-1-1',
         worldLayout: 'oldDoorApproach',
@@ -183,6 +186,9 @@ export const storyNodes: StoryNode[] = [
     title: '두 번째 문 / 증명의 방',
     nextNodeId: 'stage2-name-gate',
     shots: [
+      { id: '2-1-1', backgroundKey: 'road-cold', characterPose: 'walk', characterX: 0.35, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '다른 빛이\n눈에 들어왔다.' } },
+      { id: '2-1-2', backgroundKey: 'road-cold', characterPose: 'stand', characterX: 0.42, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }], caption: { type: 'inner', text: '차가웠다.\n그런데 화려했다.' } },
+      { id: '2-1-3', backgroundKey: 'road-cold', characterPose: 'hesitate', characterX: 0.54, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }, { key: 'coldCards', x: 0.58, y: 0.4 }], caption: { type: 'inner', text: '내 이름은 없었다.' }, prompt: { text: '이름표를 살펴보세요.', placement: 'object', targetX: 0.58, targetY: 0.34 } },
       {
         id: '2-1-1',
         worldLayout: 'glamourDoorApproach',
