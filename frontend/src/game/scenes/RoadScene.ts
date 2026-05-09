@@ -4,6 +4,7 @@ import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/st
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
 
 const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+const STAGE_5_ONLY_OBJECT_KEYS = new Set(['campfire', 'waitingFigureBack']);
 
 export class RoadScene extends Phaser.Scene {
   private flowManager: StoryFlowManager;
@@ -137,6 +138,10 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private drawSceneObject(object: SceneObject) {
+    if (!this.shouldRenderSceneObject(object)) {
+      return;
+    }
+
     const { width, height } = this.cameras.main;
     const x = object.x * width;
     const y = object.y * height;
@@ -206,6 +211,14 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.mainLayer.add(g);
+  }
+
+  private shouldRenderSceneObject(object: SceneObject) {
+    if (!STAGE_5_ONLY_OBJECT_KEYS.has(object.key)) {
+      return true;
+    }
+
+    return this.currentNode.stageId === 'stage-5';
   }
 
   private getPresentationScale(key: string) {

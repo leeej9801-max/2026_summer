@@ -1,6 +1,16 @@
-import { StoryNode } from '../types/story.types.ts';
+import { SceneObject, StoryNode } from '../types/story.types.ts';
 
 export const FIRST_NODE_ID = 'stage0-road-begins';
+
+const campfireArrivalWorldLayout: SceneObject[] = [
+  { key: 'campfire', x: 0.52, y: 0.76 },
+  { key: 'waitingFigureBack', x: 0.62, y: 0.75 },
+];
+
+const campfireRestWorldLayout: SceneObject[] = [
+  ...campfireArrivalWorldLayout,
+  { key: 'logSeat', x: 0.5, y: 0.8 },
+];
 
 export const storyNodes: StoryNode[] = [
   {
@@ -193,9 +203,9 @@ export const storyNodes: StoryNode[] = [
     title: '모닥불 / 기다림',
     nextNodeId: 'final-confession',
     shots: [
-      { id: '5-1-1', backgroundKey: 'campfire', characterPose: 'hesitate', characterX: 0.38, characterY: 0.74, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }], caption: { type: 'inner', text: '그곳엔 이미\n누군가 있었다.' }, camera: { fade: 'in' } },
-      { id: '5-1-2', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }], caption: { type: 'none', text: '' }, durationMs: 2000, autoNext: true },
-      { id: '5-1-3', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }, { key: 'blanketGesture', x: 0.46, y: 0.7 }], caption: { type: 'system', text: '말없이\n자리를 내어주었다.' }, durationMs: 2600, autoNext: true },
+      { id: '5-1-1', backgroundKey: 'campfire', characterPose: 'hesitate', characterX: 0.38, characterY: 0.74, objects: campfireArrivalWorldLayout, caption: { type: 'inner', text: '그곳엔 이미\n누군가 있었다.' }, camera: { fade: 'in' } },
+      { id: '5-1-2', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: campfireRestWorldLayout, caption: { type: 'none', text: '' }, durationMs: 2000, autoNext: true },
+      { id: '5-1-3', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [...campfireRestWorldLayout, { key: 'blanketGesture', x: 0.46, y: 0.7 }], caption: { type: 'system', text: '말없이\n자리를 내어주었다.' }, durationMs: 2600, autoNext: true },
     ],
   },
   {
