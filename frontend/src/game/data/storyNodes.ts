@@ -49,6 +49,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'physicalAction',
       prompt: '팀 코드 확인',
+      shortPrompt: '팀 코드를 입력하고 길로 들어가세요.',
       description: '팀 코드를 입력하고 첫 번째 길로 들어가세요.',
       answerKeys: ['START', '시작'],
       hintIds: ['stage0-start-1'],
@@ -108,6 +109,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'answer',
       prompt: '첫 번째 문을 열 단서가 필요하다',
+      shortPrompt: '조각난 문장을 복원하고 단어를 입력하세요.',
       description: '현실에서 조각난 문장을 복원하고 숨겨진 단어를 입력하세요.',
       answerKeys: ['확신', 'FAITH'],
       hintIds: ['stage1-faith-1', 'stage1-faith-2'],
@@ -215,6 +217,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'answer',
       prompt: '이것들이 정말 너의 이름인가?',
+      shortPrompt: '카드를 분류하고 결론을 입력하세요.',
       description: '성과, 비교, 인정, 실패, 불안, 스펙 단어 카드를 분류한 뒤 결론을 입력하세요.',
       answerKeys: ['이름이 아니다', 'NOT NAME'],
       hintIds: ['stage2-name-1', 'stage2-name-2'],
@@ -317,6 +320,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'messageInput',
       prompt: '노이즈 속 반복 문장을 전달하세요',
+      shortPrompt: '반복되는 문장을 입력하거나 전달하세요.',
       description: '현실 소품의 메시지나 기도문에서 반복되는 문장을 찾아 입력하거나 전달하기를 누르세요.',
       answerKeys: ['그 빛이 아직 있었다', '전달하기', 'STILL THERE'],
       hintIds: ['stage3-message-1', 'stage3-message-2'],
@@ -395,6 +399,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'routePuzzle',
       prompt: '걸어온 길은 어떤 모양인가?',
+      shortPrompt: '경로 조각을 조합하고 모양을 입력하세요.',
       description: '지금까지 얻은 경로 조각과 방향 조각을 조합하세요. 진행 중 전체 지도는 공개되지 않습니다.',
       answerKeys: ['십자가', 'CROSS', 'THE CROSS'],
       hintIds: ['stage4-route-1', 'stage4-route-2'],
@@ -469,6 +474,7 @@ export const storyNodes: StoryNode[] = [
     interaction: {
       type: 'answer',
       prompt: 'WHO DO YOU SAY I AM?',
+      shortPrompt: '너는 나를 누구라 하느냐?',
       description: '너는 나를 누구라 하느냐?',
       answerKeys: ['그리스도', 'CHRIST'],
       hintIds: ['final-confession-1'],

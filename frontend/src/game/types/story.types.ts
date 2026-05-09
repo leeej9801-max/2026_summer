@@ -83,6 +83,7 @@ export type CutsceneShot = {
 export type InteractionGate = {
   type: InteractionType;
   prompt: string;
+  shortPrompt?: string;
   description?: string;
   answerKeys?: string[];
   hintIds?: string[];
