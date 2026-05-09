@@ -44,7 +44,11 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private routeByNodeType() {
-    if (this.currentNode.nodeType === 'interaction' || this.currentNode.nodeType === 'puzzle') {
+    if (
+      this.currentNode.nodeType === 'interaction' ||
+      this.currentNode.nodeType === 'routePuzzle' ||
+      this.currentNode.nodeType === 'puzzle'
+    ) {
       this.scene.start('InteractionScene');
       return;
     }
@@ -397,7 +401,11 @@ export class RoadScene extends Phaser.Scene {
     this.cameras.main.fadeOut(450, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
       if (progress < 1) return;
       if (!next) return;
-      if (next.nodeType === 'interaction' || next.nodeType === 'puzzle') {
+      if (
+        next.nodeType === 'interaction' ||
+        next.nodeType === 'routePuzzle' ||
+        next.nodeType === 'puzzle'
+      ) {
         this.scene.start('InteractionScene');
       } else if (next.nodeType === 'final') {
         this.scene.start('FinalQuestionScene');
