@@ -11,9 +11,9 @@ export const storyNodes: StoryNode[] = [
     title: '접속 / 길의 시작',
     nextNodeId: 'stage0-start-gate',
     shots: [
-      { id: '0-1-1', backgroundKey: 'empty-road', characterPose: 'none', objects: [], caption: { type: 'inner', text: '빛은 아주 멀었다.' }, camera: { fade: 'in' } },
-      { id: '0-1-2', backgroundKey: 'empty-road', characterPose: 'none', objects: [{ key: 'distantLightTiny', x: 0.84, y: 0.48 }], caption: { type: 'system', text: '아직 아무도\n기다리지 않았다.' } },
-      { id: '0-1-3', backgroundKey: 'road', characterPose: 'stand', characterX: 0.28, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '한 걸음이면\n충분할 줄 알았다.' } },
+      { id: '0-1-1', worldLayout: 'emptyRoad', backgroundKey: 'empty-road', characterPose: 'none', objects: [], caption: { type: 'inner', text: '빛은 아주 멀었다.' }, camera: { fade: 'in' } },
+      { id: '0-1-2', worldLayout: 'roadWithDistantLight', backgroundKey: 'empty-road', characterPose: 'none', objects: [{ key: 'distantLightTiny', x: 0.84, y: 0.48 }], caption: { type: 'system', text: '아직 아무도\n기다리지 않았다.' } },
+      { id: '0-1-3', worldLayout: 'roadWithDistantLight', backgroundKey: 'road', characterPose: 'stand', characterX: 0.28, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '한 걸음이면\n충분할 줄 알았다.' } },
     ],
   },
   {
@@ -40,9 +40,9 @@ export const storyNodes: StoryNode[] = [
     title: '첫 번째 문 / 발견',
     nextNodeId: 'stage1-faith-gate',
     shots: [
-      { id: '1-1-1', backgroundKey: 'road', characterPose: 'walk', characterX: 0.38, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '길은 조용했다.' } },
-      { id: '1-1-2', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.44, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '익숙한 문이었다.\n그래서 더 낯설었다.' } },
-      { id: '1-1-3', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.5, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }], caption: { type: 'prompt', text: '문은 대답을\n기다렸다.' } },
+      { id: '1-1-1', worldLayout: 'roadWithDistantLight', backgroundKey: 'road', characterPose: 'walk', characterX: 0.38, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '길은 조용했다.' } },
+      { id: '1-1-2', worldLayout: 'oldDoorApproach', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.44, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '익숙한 문이었다.\n그래서 더 낯설었다.' } },
+      { id: '1-1-3', worldLayout: 'oldDoorApproach', backgroundKey: 'road', characterPose: 'hesitate', characterX: 0.5, characterY: 0.72, objects: [{ key: 'oldDoorClosed', x: 0.69, y: 0.67 }], prompt: { text: '문은 대답을\n기다렸다.', placement: 'nearObject' } },
     ],
   },
   {
@@ -69,9 +69,9 @@ export const storyNodes: StoryNode[] = [
     title: '첫 번째 문 안',
     nextNodeId: 'stage2-find-door',
     shots: [
-      { id: '1-4-1', backgroundKey: 'road', characterPose: 'enterDoor', characterX: 0.62, characterY: 0.72, objects: [{ key: 'oldDoorOpen', x: 0.69, y: 0.67 }], caption: { type: 'system', text: '문이 열렸다.' }, camera: { fade: 'in' } },
-      { id: '1-4-2', backgroundKey: 'quiet-room', characterPose: 'stand', characterX: 0.5, characterY: 0.72, objects: [{ key: 'emptyFrame', x: 0.5, y: 0.44 }], caption: { type: 'inner', text: '아는 말들이\n비어 있었다.' } },
-      { id: '1-4-3', backgroundKey: 'road', characterPose: 'exitDoor', characterX: 0.46, characterY: 0.72, objects: [{ key: 'oldDoorFaded', x: 0.69, y: 0.67 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '다시 나왔지만\n빛은 보이지 않았다.' } },
+      { id: '1-4-1', worldLayout: 'oldDoorApproach', backgroundKey: 'road', characterPose: 'enterDoor', characterX: 0.62, characterY: 0.72, objects: [{ key: 'oldDoorOpen', x: 0.69, y: 0.67 }], caption: { type: 'system', text: '문이 열렸다.' }, camera: { fade: 'in' } },
+      { id: '1-4-2', worldLayout: 'oldDoorInterior', backgroundKey: 'quiet-room', characterPose: 'stand', characterX: 0.5, characterY: 0.72, objects: [{ key: 'emptyFrame', x: 0.5, y: 0.44 }], caption: { type: 'inner', text: '아는 말들이\n비어 있었다.' } },
+      { id: '1-4-3', worldLayout: 'oldDoorReturn', backgroundKey: 'road', characterPose: 'exitDoor', characterX: 0.46, characterY: 0.72, objects: [{ key: 'oldDoorFaded', x: 0.69, y: 0.67 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '다시 나왔지만\n빛은 보이지 않았다.' } },
     ],
   },
   {
@@ -82,9 +82,9 @@ export const storyNodes: StoryNode[] = [
     title: '두 번째 문 / 증명의 방',
     nextNodeId: 'stage2-name-gate',
     shots: [
-      { id: '2-1-1', backgroundKey: 'road-cold', characterPose: 'walk', characterX: 0.35, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '다른 빛이\n눈에 들어왔다.' } },
-      { id: '2-1-2', backgroundKey: 'road-cold', characterPose: 'stand', characterX: 0.42, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }], caption: { type: 'inner', text: '차가웠다.\n그런데 화려했다.' } },
-      { id: '2-1-3', backgroundKey: 'road-cold', characterPose: 'hesitate', characterX: 0.54, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }, { key: 'coldCards', x: 0.58, y: 0.4 }], caption: { type: 'prompt', text: '이름표들이\n문 앞에 쌓였다.' } },
+      { id: '2-1-1', worldLayout: 'roadWithDistantLight', backgroundKey: 'road-cold', characterPose: 'walk', characterX: 0.35, characterY: 0.72, objects: [{ key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '다른 빛이\n눈에 들어왔다.' } },
+      { id: '2-1-2', worldLayout: 'glamourDoorApproach', backgroundKey: 'road-cold', characterPose: 'stand', characterX: 0.42, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }], caption: { type: 'inner', text: '차가웠다.\n그런데 화려했다.' } },
+      { id: '2-1-3', worldLayout: 'glamourDoorApproach', backgroundKey: 'road-cold', characterPose: 'hesitate', characterX: 0.54, characterY: 0.72, objects: [{ key: 'glamourDoorClosed', x: 0.7, y: 0.65 }, { key: 'coldCards', x: 0.58, y: 0.4 }], prompt: { text: '이름표들이\n문 앞에 쌓였다.', placement: 'nearObject' } },
     ],
   },
   {
@@ -111,9 +111,9 @@ export const storyNodes: StoryNode[] = [
     title: '증명의 방 안',
     nextNodeId: 'stage3-storm-build',
     shots: [
-      { id: '2-4-1', backgroundKey: 'road-cold', characterPose: 'enterDoor', characterX: 0.65, characterY: 0.72, objects: [{ key: 'glamourDoorOpen', x: 0.7, y: 0.65 }], caption: { type: 'system', text: '문이 삼켰다.' } },
-      { id: '2-4-2', backgroundKey: 'proof-room', characterPose: 'stand', characterX: 0.5, characterY: 0.74, objects: [{ key: 'floatingPapers', x: 0.5, y: 0.42 }, { key: 'burningNamesCold', x: 0.65, y: 0.58 }], caption: { type: 'inner', text: '많이 얻은 줄 알았다.\n목소리는 사라졌다.' }, camera: { shake: true } },
-      { id: '2-4-3', backgroundKey: 'road-cold', characterPose: 'tired', characterX: 0.46, characterY: 0.74, objects: [{ key: 'glamourDoorFaded', x: 0.7, y: 0.65 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '어깨가\n먼저 무너졌다.' } },
+      { id: '2-4-1', worldLayout: 'glamourDoorApproach', backgroundKey: 'road-cold', characterPose: 'enterDoor', characterX: 0.65, characterY: 0.72, objects: [{ key: 'glamourDoorOpen', x: 0.7, y: 0.65 }], caption: { type: 'system', text: '문이 삼켰다.' } },
+      { id: '2-4-2', worldLayout: 'glamourDoorInterior', backgroundKey: 'proof-room', characterPose: 'stand', characterX: 0.5, characterY: 0.74, objects: [{ key: 'floatingPapers', x: 0.5, y: 0.42 }, { key: 'burningNamesCold', x: 0.65, y: 0.58 }], caption: { type: 'inner', text: '많이 얻은 줄 알았다.\n목소리는 사라졌다.' }, camera: { shake: true } },
+      { id: '2-4-3', worldLayout: 'glamourDoorReturn', backgroundKey: 'road-cold', characterPose: 'tired', characterX: 0.46, characterY: 0.74, objects: [{ key: 'glamourDoorFaded', x: 0.7, y: 0.65 }, { key: 'distantLightTiny', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '어깨가\n먼저 무너졌다.' } },
     ],
   },
   {
@@ -124,9 +124,9 @@ export const storyNodes: StoryNode[] = [
     title: '폭풍 / 무너짐',
     nextNodeId: 'stage3-message-gate',
     shots: [
-      { id: '3-1-1', backgroundKey: 'road', characterPose: 'tired', characterX: 0.52, characterY: 0.74, objects: [{ key: 'distantLightFaint', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '그래도\n걸어야 했다.' } },
-      { id: '3-1-2', backgroundKey: 'storm', characterPose: 'tired', characterX: 0.5, characterY: 0.74, objects: [{ key: 'stormLines', x: 0.5, y: 0.5 }], caption: { type: 'inner', text: '소리가 너무 많았다.' }, camera: { shake: true } },
-      { id: '3-1-3', backgroundKey: 'collapse', characterPose: 'collapsed', characterX: 0.47, characterY: 0.78, objects: [{ key: 'distantLightFaint', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '더는\n걸을 수 없었다.' } },
+      { id: '3-1-1', worldLayout: 'roadWithDistantLight', backgroundKey: 'road', characterPose: 'tired', characterX: 0.52, characterY: 0.74, objects: [{ key: 'distantLightFaint', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '그래도\n걸어야 했다.' } },
+      { id: '3-1-2', worldLayout: 'stormRoad', backgroundKey: 'storm', characterPose: 'tired', characterX: 0.5, characterY: 0.74, objects: [{ key: 'stormLines', x: 0.5, y: 0.5 }], caption: { type: 'inner', text: '소리가 너무 많았다.' }, camera: { shake: true } },
+      { id: '3-1-3', worldLayout: 'collapsedRoad', backgroundKey: 'collapse', characterPose: 'collapsed', characterX: 0.47, characterY: 0.78, objects: [{ key: 'distantLightFaint', x: 0.86, y: 0.5 }], caption: { type: 'inner', text: '더는\n걸을 수 없었다.' } },
     ],
   },
   {
@@ -153,7 +153,7 @@ export const storyNodes: StoryNode[] = [
     title: '빛을 다시 봄',
     nextNodeId: 'stage4-return-road',
     shots: [
-      { id: '3-4-1', backgroundKey: 'collapse', characterPose: 'lookUp', characterX: 0.47, characterY: 0.78, objects: [{ key: 'distantLightClear', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '그 빛이,\n아직 있었다.' }, camera: { fade: 'in' } },
+      { id: '3-4-1', worldLayout: 'lightRecovery', backgroundKey: 'collapse', characterPose: 'lookUp', characterX: 0.47, characterY: 0.78, objects: [{ key: 'distantLightClear', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '그 빛이,\n아직 있었다.' }, camera: { fade: 'in' } },
     ],
   },
   {
@@ -164,16 +164,16 @@ export const storyNodes: StoryNode[] = [
     title: '돌아가는 길 / 경로 회수',
     nextNodeId: 'stage4-route-gate',
     shots: [
-      { id: '4-1-1', backgroundKey: 'road', characterPose: 'rise', characterX: 0.44, characterY: 0.74, objects: [{ key: 'distantLightClear', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '천천히\n일어났다.' } },
-      { id: '4-1-2', backgroundKey: 'road', characterPose: 'walk', characterX: 0.58, characterY: 0.72, objects: [{ key: 'distantLightStrong', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '이번엔\n빛을 놓치지 않았다.' } },
-      { id: '4-1-3', backgroundKey: 'road', characterPose: 'run', characterX: 0.72, characterY: 0.72, objects: [{ key: 'distantLightStrong', x: 0.84, y: 0.48 }], caption: { type: 'system', text: '기록 조각이\n손에 남았다.' } },
+      { id: '4-1-1', worldLayout: 'lightRecovery', backgroundKey: 'road', characterPose: 'rise', characterX: 0.44, characterY: 0.74, objects: [{ key: 'distantLightClear', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '천천히\n일어났다.' } },
+      { id: '4-1-2', worldLayout: 'runToLight', backgroundKey: 'road', characterPose: 'walk', characterX: 0.58, characterY: 0.72, objects: [{ key: 'distantLightStrong', x: 0.84, y: 0.48 }], caption: { type: 'inner', text: '이번엔\n빛을 놓치지 않았다.' } },
+      { id: '4-1-3', worldLayout: 'runToLight', backgroundKey: 'road', characterPose: 'run', characterX: 0.72, characterY: 0.72, objects: [{ key: 'distantLightStrong', x: 0.84, y: 0.48 }], caption: { type: 'system', text: '기록 조각이\n손에 남았다.' } },
     ],
   },
   {
     id: 'stage4-route-gate',
     actId: 'act-5',
     stageId: 'stage-4',
-    nodeType: 'puzzle',
+    nodeType: 'routePuzzle',
     title: '걸어온 길의 모양',
     interaction: {
       type: 'routePuzzle',
@@ -193,9 +193,9 @@ export const storyNodes: StoryNode[] = [
     title: '모닥불 / 기다림',
     nextNodeId: 'final-confession',
     shots: [
-      { id: '5-1-1', backgroundKey: 'campfire', characterPose: 'hesitate', characterX: 0.38, characterY: 0.74, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }], caption: { type: 'inner', text: '그곳엔 이미\n누군가 있었다.' }, camera: { fade: 'in' } },
-      { id: '5-1-2', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }], caption: { type: 'none', text: '' }, durationMs: 2000, autoNext: true },
-      { id: '5-1-3', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }, { key: 'blanketGesture', x: 0.46, y: 0.7 }], caption: { type: 'system', text: '말없이\n자리를 내어주었다.' }, durationMs: 2600, autoNext: true },
+      { id: '5-1-1', worldLayout: 'campfireArrival', backgroundKey: 'campfire', characterPose: 'hesitate', characterX: 0.38, characterY: 0.74, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }], caption: { type: 'inner', text: '그곳엔 이미\n누군가 있었다.' }, camera: { fade: 'in' } },
+      { id: '5-1-2', worldLayout: 'campfireRest', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }], caption: { type: 'none', text: '' }, durationMs: 2000, autoNext: true },
+      { id: '5-1-3', worldLayout: 'campfireRest', backgroundKey: 'campfire', characterPose: 'sitBack', characterX: 0.44, characterY: 0.76, objects: [{ key: 'campfire', x: 0.52, y: 0.76 }, { key: 'waitingFigureBack', x: 0.62, y: 0.75 }, { key: 'logSeat', x: 0.5, y: 0.8 }, { key: 'blanketGesture', x: 0.46, y: 0.7 }], caption: { type: 'system', text: '말없이\n자리를 내어주었다.' }, durationMs: 2600, autoNext: true },
     ],
   },
   {

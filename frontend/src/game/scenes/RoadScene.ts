@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
-import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
+import { CharacterPose, CutsceneShot, PromptLine, SceneObject, StoryNode } from '../types/story.types.ts';
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
 
 const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
@@ -44,7 +44,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private routeByNodeType() {
-    if (this.currentNode.nodeType === 'interaction' || this.currentNode.nodeType === 'puzzle') {
+    if (this.currentNode.nodeType === 'interaction' || this.currentNode.nodeType === 'puzzle' || this.currentNode.nodeType === 'routePuzzle') {
       this.scene.start('InteractionScene');
       return;
     }
@@ -80,6 +80,7 @@ export class RoadScene extends Phaser.Scene {
     this.drawCenterFocusOverlay();
     this.applyCameraCue(shot);
     this.uiLayer.add(createCaptionBox(this, shot.caption, this.cameras.main.width, this.cameras.main.height));
+    if (shot.prompt) this.drawPromptLine(shot.prompt);
     this.drawShotCounter();
 
     if (animate || shot.camera?.fade === 'in') {
@@ -94,7 +95,7 @@ export class RoadScene extends Phaser.Scene {
   private drawEnvironment(shot: CutsceneShot) {
     const { width, height } = this.cameras.main;
     const g = this.add.graphics();
-    const bg = shot.backgroundKey;
+    const bg = shot.backgroundKey ?? shot.worldLayout;
 
     const base = bg.includes('cold') || bg.includes('proof') ? 0x060711 : bg.includes('campfire') ? 0x090604 : bg.includes('storm') ? 0x030407 : 0x070707;
     g.fillStyle(base, 1);
@@ -362,6 +363,28 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
+  private drawPromptLine(prompt: PromptLine) {
+    const { width, height } = this.cameras.main;
+    const isNearObject = prompt.placement === 'nearObject';
+    const isSmallPanel = prompt.placement === 'smallPanel';
+    const x = isNearObject ? width * 0.67 : width / 2;
+    const y = isNearObject ? height * 0.54 : isSmallPanel ? height * 0.36 : height - 92;
+    const boxWidth = isSmallPanel ? width * 0.48 : isNearObject ? width * 0.36 : width - 160;
+    const boxHeight = isSmallPanel ? 96 : 112;
+    const box = this.add.rectangle(x, y, boxWidth, boxHeight, 0x000000, 0.72)
+      .setStrokeStyle(2, 0xffffff, 0.48);
+    const text = this.add.text(x, y, prompt.text, {
+      fontSize: isSmallPanel ? '28px' : '32px',
+      color: '#ffffff',
+      align: 'center',
+      wordWrap: { width: boxWidth - 48 },
+      fontFamily: 'serif',
+      lineSpacing: 10,
+    }).setOrigin(0.5);
+
+    this.uiLayer.add([box, text]);
+  }
+
   private drawShotCounter() {
     if (!isDevBuild()) return;
     const total = this.currentNode.shots?.length || 1;
@@ -397,7 +420,7 @@ export class RoadScene extends Phaser.Scene {
     this.cameras.main.fadeOut(450, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
       if (progress < 1) return;
       if (!next) return;
-      if (next.nodeType === 'interaction' || next.nodeType === 'puzzle') {
+      if (next.nodeType === 'interaction' || next.nodeType === 'puzzle' || next.nodeType === 'routePuzzle') {
         this.scene.start('InteractionScene');
       } else if (next.nodeType === 'final') {
         this.scene.start('FinalQuestionScene');
