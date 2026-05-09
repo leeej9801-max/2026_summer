@@ -3,6 +3,8 @@ import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
 import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
 
+const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+
 export class RoadScene extends Phaser.Scene {
   private flowManager: StoryFlowManager;
   private mainLayer!: Phaser.GameObjects.Container;
@@ -34,14 +36,14 @@ export class RoadScene extends Phaser.Scene {
       this.handleNextShot();
     });
 
-    const resetBtn = this.add.text(width - 20, 20, '[ Reset ]', {
-      fontSize: '11px',
-      color: '#444444',
+    const resetBtn = this.add.text(width - 10, height - 10, '•', {
+      fontSize: '10px',
+      color: '#252525',
       fontFamily: 'monospace',
-    }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
-    resetBtn.on('pointerdown', () => {
-      this.flowManager.resetProgress();
-      this.scene.restart();
+    }).setOrigin(1, 1).setAlpha(0.42).setInteractive({ useHandCursor: true });
+    resetBtn.on('pointerdown', () => this.resetProgressForOperator());
+    this.input.keyboard?.on('keydown-R', (event: KeyboardEvent) => {
+      if (event.shiftKey) this.resetProgressForOperator();
     });
   }
 
@@ -79,6 +81,7 @@ export class RoadScene extends Phaser.Scene {
     if (shot.characterPose && shot.characterPose !== 'none') {
       this.drawCharacter(shot.characterPose, shot.characterX || 0.5, shot.characterY || 0.72, shot.characterScale || 1);
     }
+    this.drawCenterFocusOverlay();
     this.applyCameraCue(shot);
     this.uiLayer.add(createCaptionBox(this, shot.caption, this.cameras.main.width, this.cameras.main.height));
     this.drawShotCounter();
@@ -141,7 +144,7 @@ export class RoadScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const x = object.x * width;
     const y = object.y * height;
-    const scale = object.scale || 1;
+    const scale = (object.scale || 1) * this.getPresentationScale(object.key);
     const alpha = object.alpha ?? 1;
     const g = this.add.graphics().setAlpha(alpha);
 
@@ -207,6 +210,13 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.mainLayer.add(g);
+  }
+
+  private getPresentationScale(key: string) {
+    if (key.includes('Door')) return 1.18;
+    if (key.includes('Light')) return 1.25;
+    if (['campfire', 'waitingFigureBack', 'burningNamesCold'].includes(key)) return 1.16;
+    return 1;
   }
 
   private drawLight(g: Phaser.GameObjects.Graphics, x: number, y: number, size: number, alpha: number) {
@@ -331,6 +341,25 @@ export class RoadScene extends Phaser.Scene {
     this.mainLayer.add(char);
   }
 
+  private drawCenterFocusOverlay() {
+    const { width, height } = this.cameras.main;
+    const g = this.add.graphics();
+    const focusWidth = width * 0.68;
+    const focusHeight = height * 0.58;
+    const focusX = (width - focusWidth) / 2;
+    const focusY = height * 0.16;
+
+    g.fillStyle(0x000000, 0.2);
+    g.fillRect(0, 0, width, focusY);
+    g.fillRect(0, focusY + focusHeight, width, height - focusY - focusHeight);
+    g.fillRect(0, focusY, focusX, focusHeight);
+    g.fillRect(focusX + focusWidth, focusY, focusX, focusHeight);
+    g.lineStyle(2, 0xffffff, 0.08);
+    g.strokeRoundedRect(focusX, focusY, focusWidth, focusHeight, 28);
+
+    this.fxLayer.add(g);
+  }
+
   private applyCameraCue(shot: CutsceneShot) {
     if (shot.camera?.shake) {
       this.cameras.main.shake(650, 0.0035);
@@ -338,6 +367,7 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private drawShotCounter() {
+    if (!isDevBuild()) return;
     const total = this.currentNode.shots?.length || 1;
     const text = this.add.text(28, 24, `${this.currentNode.stageId.toUpperCase()}  ${this.shotIndex + 1}/${total}`, {
       fontSize: '12px',
@@ -345,6 +375,11 @@ export class RoadScene extends Phaser.Scene {
       fontFamily: 'monospace',
     });
     this.uiLayer.add(text);
+  }
+
+  private resetProgressForOperator() {
+    this.flowManager.resetProgress();
+    this.scene.restart();
   }
 
   private handleNextShot() {
