@@ -31,6 +31,67 @@ export class InteractionScene extends Phaser.Scene {
     this.mainLayer = this.add.container(0, 0);
     this.uiLayer = this.add.container(0, 0);
 
+    this.add.text(width / 2, 108, this.node.title, {
+      fontSize: '28px',
+      color: '#d8d8d8',
+      fontFamily: 'serif',
+    }).setOrigin(0.5);
+
+    this.add.text(width / 2, 166, 'INTERACTION GATE', {
+      fontSize: '18px',
+      color: '#f4d58d',
+      fontFamily: 'sans-serif',
+      letterSpacing: 3,
+    }).setOrigin(0.5);
+
+    if (this.node.interaction.type === 'routePuzzle') {
+      if (this.node.stageId !== 'stage-4') {
+        this.scene.start('RoadScene');
+        return;
+      }
+
+      const routePuzzlePanel = createRoutePuzzlePanel(this, width / 2, 410, {
+        prompt: this.node.interaction.prompt,
+        description: this.node.interaction.description,
+        onSubmit: (answer) => this.handleSubmit(answer),
+      });
+      this.answerElement = routePuzzlePanel.answerElement;
+    } else {
+      this.add.text(width / 2, 230, this.node.interaction.prompt, {
+        fontSize: '38px',
+        color: '#ffffff',
+        align: 'center',
+        fontFamily: 'serif',
+        wordWrap: { width: 900 },
+      }).setOrigin(0.5);
+
+      this.add.text(width / 2, 304, this.node.interaction.description || '', {
+        fontSize: '21px',
+        color: '#d0d0d0',
+        align: 'center',
+        fontFamily: 'sans-serif',
+        wordWrap: { width: 860 },
+        lineSpacing: 10,
+      }).setOrigin(0.5);
+
+      this.drawPhysicalCue(width / 2, 430);
+      this.answerElement = createAnswerInput(this, width / 2, height - 142, {
+        placeholder: this.node.interaction.type === 'physicalAction' ? 'START 또는 시작' : '정답을 입력하세요',
+        buttonLabel: this.node.interaction.type === 'messageInput' ? '전달하기' : '정답 확인',
+        onSubmit: (answer) => this.handleSubmit(answer),
+      });
+    }
+
+    const hints = getHintsByIds(this.node.interaction.hintIds);
+    createHintPanel(this, width - 260, height - 116, {
+      hints,
+      usedHintIds: this.interactionManager.getUsedHintIds(),
+      onUseHint: (hintId) => this.interactionManager.markHintUsed(hintId),
+    });
+
+    this.feedbackText = this.add.text(width / 2, height - 34, '', {
+      fontSize: '22px',
+      color: '#ff9f9f',
     const renderer = new SketchRenderer(this, this.mainLayer);
     const gatePosition = renderer.renderInteractionBackdrop(this.node);
     const prompt = this.node.interaction.shortPrompt || this.node.interaction.prompt;

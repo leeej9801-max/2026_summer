@@ -75,6 +75,10 @@ export class ProgressManager {
     return [...this.progress.usedHintIds];
   }
 
+  public getCompletedNodeIds(): string[] {
+    return [...this.progress.completedNodeIds];
+  }
+
   public reset() {
     this.progress = emptyProgress();
     this.save();
