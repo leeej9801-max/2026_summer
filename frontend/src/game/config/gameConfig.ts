@@ -3,6 +3,7 @@ import { BootScene } from '../scenes/BootScene.ts';
 import { PreloadScene } from '../scenes/PreloadScene.ts';
 import { TitleScene } from '../scenes/TitleScene.ts';
 import { RoadScene } from '../scenes/RoadScene.ts';
+import { InteractionScene } from '../scenes/InteractionScene.ts';
 import { FinalQuestionScene } from '../scenes/FinalQuestionScene.ts';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
@@ -18,7 +19,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   dom: {
     createContainer: true
   },
-  scene: [BootScene, PreloadScene, TitleScene, RoadScene, FinalQuestionScene],
+  scene: [BootScene, PreloadScene, TitleScene, RoadScene, InteractionScene, FinalQuestionScene],
   physics: {
     default: 'arcade',
     arcade: {

@@ -1,8 +1,11 @@
 import Phaser from 'phaser';
+import { ProgressManager } from '../systems/ProgressManager.ts';
+import { createAnswerInput } from '../ui/createAnswerInput.ts';
 
 export class FinalQuestionScene extends Phaser.Scene {
   private inputElement: Phaser.GameObjects.DOMElement | null = null;
   private resultText: Phaser.GameObjects.Text | null = null;
+  private progress = ProgressManager.getInstance();
 
   constructor() {
     super('FinalQuestionScene');
@@ -11,82 +14,73 @@ export class FinalQuestionScene extends Phaser.Scene {
   create() {
     const { width, height } = this.cameras.main;
 
-    // 1. Background Continuity (Dim Campfire)
-    this.add.rectangle(width / 2, height / 2, width, height, 0x050505);
-    const glow = this.add.graphics();
-    glow.fillStyle(0x1a0a00, 0.2);
-    glow.fillCircle(width / 2, height / 2, 400);
+    this.drawDimCampfire(width, height);
+    this.cameras.main.fadeIn(2200, 0, 0, 0);
 
-    // 2. Slow Fade In
-    this.cameras.main.fadeIn(2000, 0, 0, 0);
-
-    // 3. Question
-    this.add.text(width / 2, height / 2 - 130, 'WHO DO YOU SAY I AM?', {
+    this.add.text(width / 2, height / 2 - 142, 'WHO DO YOU SAY I AM?', {
       fontSize: '40px',
       color: '#ffffff',
       fontStyle: 'bold',
-      fontFamily: 'serif'
+      fontFamily: 'serif',
     }).setOrigin(0.5);
 
-    this.add.text(width / 2, height / 2 - 80, '너는 나를 누구라 하느냐?', {
-      fontSize: '18px',
-      color: '#666666',
-      fontFamily: 'serif'
+    this.add.text(width / 2, height / 2 - 90, '너는 나를 누구라 하느냐?', {
+      fontSize: '19px',
+      color: '#b7a99b',
+      fontFamily: 'serif',
     }).setOrigin(0.5);
 
-    // 4. Input Form
-    const htmlForm = `
-      <div style="text-align: center;">
-        <input type="text" name="answer" placeholder="..." 
-          style="font-size: 22px; padding: 12px; width: 280px; border: none; border-bottom: 1px solid #333; background: transparent; color: #fff; text-align: center; outline: none; font-family: serif;">
-        <br><br>
-        <button type="button" name="submit" 
-          style="font-size: 14px; padding: 10px 20px; cursor: pointer; background: transparent; color: #555; border: 1px solid #222; letter-spacing: 2px;">
-          CONFESS
-        </button>
-      </div>
-    `;
-
-    this.inputElement = this.add.dom(width / 2, height / 2 + 60).createFromHTML(htmlForm);
-    
-    this.inputElement.addListener('click');
-    this.inputElement.on('click', (event: any) => {
-      if (event.target.name === 'submit') {
-        const input = this.inputElement?.getChildByName('answer') as HTMLInputElement;
-        if (input) {
-          this.handleAnswer(input.value);
-        }
-      }
+    this.inputElement = createAnswerInput(this, width / 2, height / 2 + 52, {
+      placeholder: '고백을 입력하세요',
+      buttonLabel: 'CONFESS',
+      onSubmit: (answer) => this.handleAnswer(answer),
     });
 
-    this.resultText = this.add.text(width / 2, height / 2 + 230, '', {
+    this.resultText = this.add.text(width / 2, height / 2 + 220, '', {
       fontSize: '20px',
       color: '#888888',
       align: 'center',
-      wordWrap: { width: 800 },
+      wordWrap: { width: 820 },
       fontFamily: 'serif',
-      lineSpacing: 10
+      lineSpacing: 12,
     }).setOrigin(0.5);
   }
 
+  private drawDimCampfire(width: number, height: number) {
+    const g = this.add.graphics();
+    g.fillStyle(0x050403, 1);
+    g.fillRect(0, 0, width, height);
+    for (let i = 5; i > 0; i -= 1) {
+      g.fillStyle(0xff6a00, 0.025 * i);
+      g.fillCircle(width / 2, height * 0.76, 90 * i);
+    }
+    g.fillStyle(0xff4a00, 0.55);
+    g.fillTriangle(width / 2 - 14, height * 0.76, width / 2 + 14, height * 0.76, width / 2, height * 0.76 - 38);
+    g.fillStyle(0x1b1b1b, 0.9);
+    g.fillCircle(width * 0.6, height * 0.72, 13);
+    g.fillRoundedRect(width * 0.6 - 24, height * 0.72 + 12, 48, 48, 12);
+    g.fillStyle(0x000000, 0.62);
+    g.fillRect(0, 0, width, height);
+  }
+
   private handleAnswer(answer: string) {
-    const normalized = answer.trim().toLowerCase();
+    const normalized = answer.trim().replace(/\s+/g, ' ').toLowerCase();
     const correctAnswers = ['그리스도', 'christ'];
-    
+
     if (correctAnswers.includes(normalized)) {
       this.showSuccess();
     } else {
       this.cameras.main.shake(400, 0.003);
-      if (this.resultText) {
-        this.resultText.setText('...');
-      }
+      this.resultText?.setText('불 앞의 정적이 다시 깊어집니다.');
     }
   }
 
   private showSuccess() {
-    if (this.inputElement) this.inputElement.setVisible(false);
-    
-    this.cameras.main.flash(2500, 255, 255, 255);
+    this.inputElement?.setVisible(false);
+    this.progress.markGateSolved('final-confession');
+    this.progress.markNodeComplete('final-confession');
+
+    this.cameras.main.flash(2200, 255, 245, 225);
 
     if (this.resultText) {
       this.resultText.setText('“주는 그리스도시요 살아 계신 하나님의 아들이시니이다”\n(마태복음 16:16)');
@@ -94,15 +88,13 @@ export class FinalQuestionScene extends Phaser.Scene {
       this.resultText.setFontSize(26);
     }
 
-    this.time.addEvent({
-      delay: 5000,
-      callback: () => {
-        this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 80, '그 길은 처음부터 당신을 기다리고 있었습니다.', {
-          fontSize: '16px',
-          color: '#333333',
-          fontStyle: 'italic'
-        }).setOrigin(0.5);
-      }
+    this.time.delayedCall(5200, () => {
+      this.add.text(this.cameras.main.width / 2, this.cameras.main.height - 82, '그 길은 처음부터 당신을 기다리고 있었습니다.', {
+        fontSize: '16px',
+        color: '#766b61',
+        fontStyle: 'italic',
+        fontFamily: 'serif',
+      }).setOrigin(0.5);
     });
   }
 }
