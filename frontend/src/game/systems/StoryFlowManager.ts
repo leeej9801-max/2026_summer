@@ -1,13 +1,16 @@
 import { FIRST_NODE_ID, storyNodeById } from '../data/storyNodes.ts';
 import { StoryNode } from '../types/story.types.ts';
 import { ProgressManager } from './ProgressManager.ts';
+import { RouteTraceManager } from './RouteTraceManager.ts';
 
 export class StoryFlowManager {
   private static instance: StoryFlowManager;
   private progress: ProgressManager;
+  private routeTrace: RouteTraceManager;
 
   private constructor() {
     this.progress = ProgressManager.getInstance();
+    this.routeTrace = RouteTraceManager.getInstance();
   }
 
   public static getInstance(): StoryFlowManager {
@@ -38,7 +41,18 @@ export class StoryFlowManager {
   }
 
   public solveInteraction(nodeId: string, successNodeId: string) {
+    const current = storyNodeById.get(nodeId);
+    const fragmentKey = current?.interaction?.routeFragmentReward?.fragmentKey;
+
+    if (fragmentKey) {
+      this.routeTrace.collectFragment(current.stageId, fragmentKey);
+    }
+
+  public solveInteraction(nodeId: string, successNodeId: string, routeFragmentReward?: string) {
     this.progress.markGateSolved(nodeId);
+    if (routeFragmentReward) {
+      this.progress.collectRouteFragment(routeFragmentReward);
+    }
     this.progress.markNodeComplete(nodeId);
     this.goToNode(successNodeId);
   }
