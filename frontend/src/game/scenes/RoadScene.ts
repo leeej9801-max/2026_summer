@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
-import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
+import { CharacterPose, CutsceneShot, PromptLine, SceneObject, StoryNode } from '../types/story.types.ts';
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
 
 const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
+const STAGE_5_ONLY_OBJECT_KEYS = new Set(['campfire', 'waitingFigureBack']);
 
 export class RoadScene extends Phaser.Scene {
   private flowManager: StoryFlowManager;
@@ -14,6 +15,9 @@ export class RoadScene extends Phaser.Scene {
   private shotIndex = 0;
   private isTransitioning = false;
   private autoTimer?: Phaser.Time.TimerEvent;
+  private characterContainer?: Phaser.GameObjects.Container;
+  private activeShotTweens = new Set<Phaser.Tweens.Tween>();
+  private ambientCharacterTweens: Phaser.Tweens.Tween[] = [];
 
   constructor() {
     super('RoadScene');
@@ -53,7 +57,11 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private routeByNodeType() {
-    if (this.currentNode.nodeType === 'interaction' || this.currentNode.nodeType === 'puzzle') {
+    if (
+      this.currentNode.nodeType === 'interaction' ||
+      this.currentNode.nodeType === 'routePuzzle' ||
+      this.currentNode.nodeType === 'puzzle'
+    ) {
       this.scene.start('InteractionScene');
       return;
     }
@@ -75,6 +83,18 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.autoTimer?.remove(false);
+    this.clearShotTweens(false);
+
+    const hasCharacter = this.hasCharacter(shot);
+    const previousShot = this.currentNode.shots?.[this.shotIndex - 1];
+    const shouldReuseCharacter = Boolean(animate && hasCharacter && previousShot && this.hasCharacter(previousShot) && this.characterContainer);
+
+    if (shouldReuseCharacter && this.characterContainer) {
+      this.mainLayer.remove(this.characterContainer, false);
+    } else {
+      this.destroyCharacterContainer();
+    }
+
     this.mainLayer.removeAll(true);
     this.fxLayer.removeAll(true);
     this.uiLayer.removeAll(true);
@@ -83,12 +103,13 @@ export class RoadScene extends Phaser.Scene {
 
     this.drawEnvironment(shot);
     shot.objects?.forEach((object) => this.drawSceneObject(object));
-    if (shot.characterPose && shot.characterPose !== 'none') {
-      this.drawCharacter(shot.characterPose, shot.characterX || 0.5, shot.characterY || 0.72, shot.characterScale || 1);
+    if (hasCharacter && shot.characterPose) {
+      this.placeCharacter(shot, shouldReuseCharacter);
     }
     this.drawCenterFocusOverlay();
     this.applyCameraCue(shot);
     this.uiLayer.add(createCaptionBox(this, shot.caption, this.cameras.main.width, this.cameras.main.height));
+    this.drawPromptLine(shot.prompt);
     this.drawShotCounter();
 
     if (animate || shot.camera?.fade === 'in') {
@@ -96,8 +117,47 @@ export class RoadScene extends Phaser.Scene {
     }
 
     if (shot.autoNext) {
-      this.autoTimer = this.time.delayedCall(shot.durationMs || 1800, () => this.handleNextShot());
+      const durationMs = shot.durationMs || 1800;
+      this.autoTimer = this.time.delayedCall(durationMs, () => this.handleNextShot(false));
     }
+  }
+
+  private drawPromptLine(prompt: PromptLine | undefined) {
+    if (!prompt || prompt.text.trim() === '') return;
+
+    const { width, height } = this.cameras.main;
+    const container = this.add.container(0, 0);
+    const isPanel = prompt.placement === 'panel';
+    const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontSize: isPanel ? '21px' : '24px',
+      color: '#fff3d0',
+      align: 'center',
+      fontFamily: 'sans-serif',
+      lineSpacing: 4,
+      wordWrap: { width: isPanel ? 230 : 320 },
+    };
+    const label = this.add.text(0, 0, prompt.text, textStyle).setOrigin(0.5);
+    const bounds = label.getBounds();
+    const paddingX = isPanel ? 18 : 24;
+    const paddingY = isPanel ? 12 : 14;
+    const boxWidth = Math.max(bounds.width + paddingX * 2, isPanel ? 180 : 240);
+    const boxHeight = Math.max(bounds.height + paddingY * 2, isPanel ? 48 : 54);
+    const background = this.add.rectangle(0, 0, boxWidth, boxHeight, 0x17120a, isPanel ? 0.88 : 0.78)
+      .setStrokeStyle(1, 0xf0d89a, isPanel ? 0.52 : 0.38);
+
+    container.add([background, label]);
+
+    if (prompt.placement === 'object') {
+      container.setPosition((prompt.targetX ?? 0.66) * width, (prompt.targetY ?? 0.54) * height);
+      const pointer = this.add.triangle(0, boxHeight / 2 + 9, -9, 0, 9, 0, 0, 14, 0xf0d89a, 0.46);
+      container.add(pointer);
+    } else if (prompt.placement === 'panel') {
+      container.setPosition(width - boxWidth / 2 - 42, height * 0.28);
+    } else {
+      container.setPosition(width / 2, height - 156);
+    }
+
+    this.uiLayer.add(container);
   }
 
   private drawEnvironment(shot: CutsceneShot) {
@@ -146,6 +206,10 @@ export class RoadScene extends Phaser.Scene {
   }
 
   private drawSceneObject(object: SceneObject) {
+    if (!this.shouldRenderSceneObject(object)) {
+      return;
+    }
+
     const { width, height } = this.cameras.main;
     const x = object.x * width;
     const y = object.y * height;
@@ -215,6 +279,14 @@ export class RoadScene extends Phaser.Scene {
     }
 
     this.mainLayer.add(g);
+  }
+
+  private shouldRenderSceneObject(object: SceneObject) {
+    if (!STAGE_5_ONLY_OBJECT_KEYS.has(object.key)) {
+      return true;
+    }
+
+    return this.currentNode.stageId === 'stage-5';
   }
 
   private getPresentationScale(key: string) {
@@ -307,43 +379,202 @@ export class RoadScene extends Phaser.Scene {
     g.fill();
   }
 
-  private drawCharacter(pose: CharacterPose, xRatio: number, yRatio: number, scale: number) {
+  private hasCharacter(shot?: CutsceneShot) {
+    return Boolean(shot?.characterPose && shot.characterPose !== 'none');
+  }
+
+  private getCharacterPosition(shot: CutsceneShot) {
     const { width, height } = this.cameras.main;
-    const char = this.add.container(xRatio * width, yRatio * height);
+    return {
+      x: (shot.characterX || 0.5) * width,
+      y: (shot.characterY || 0.72) * height,
+      scale: shot.characterScale || 1,
+    };
+  }
+
+  private placeCharacter(shot: CutsceneShot, reuseCharacter: boolean) {
+    if (!shot.characterPose || shot.characterPose === 'none') return;
+
+    const { x, y, scale } = this.getCharacterPosition(shot);
+    const duration = this.getShotMotionDuration(shot);
+
+    if (!this.characterContainer) {
+      this.characterContainer = this.add.container(x, y);
+    }
+
+    const char = this.characterContainer;
+    this.configureCharacterBody(char, shot.characterPose);
     char.setScale(scale);
-    const g = this.add.graphics();
-    g.fillStyle(0xbdbdbd, 1);
-    g.fillCircle(0, -46, 13);
-    g.beginPath();
-    g.moveTo(-18, -32);
-    g.lineTo(18, -32);
+    char.setAlpha(1);
+    this.mainLayer.add(char);
+
+    if (this.hasSpecialPoseMotion(shot)) {
+      this.applyPoseEntranceMotion(shot, char, x, y, duration);
+      return;
+    }
+
+    if (reuseCharacter) {
+      this.trackShotTween(this.tweens.add({
+        targets: char,
+        x,
+        y,
+        scale,
+        duration,
+        ease: 'Sine.easeInOut',
+      }));
+    } else {
+      char.setPosition(x, y);
+    }
+  }
+
+  private getShotMotionDuration(shot: CutsceneShot) {
+    if (shot.autoNext && shot.durationMs) return shot.durationMs;
+    return 680;
+  }
+
+  private configureCharacterBody(char: Phaser.GameObjects.Container, pose: CharacterPose) {
+    this.clearAmbientCharacterTweens();
+    char.removeAll(true);
+    char.setAngle(0);
+    char.setAlpha(1);
+
+    const head = this.add.graphics();
+    const body = this.add.graphics();
+    const legs = this.add.graphics();
+
+    head.fillStyle(0xbdbdbd, 1);
+    head.fillCircle(0, -46, 13);
+
+    body.fillStyle(0xbdbdbd, 1);
+    body.beginPath();
+    body.moveTo(-18, -32);
+    body.lineTo(18, -32);
 
     switch (pose) {
       case 'walk':
       case 'enterDoor':
       case 'exitDoor':
-        g.lineTo(23, 12); g.lineTo(-18, 12); char.setAngle(pose === 'exitDoor' ? 7 : -6); break;
+        body.lineTo(23, 6); body.lineTo(-18, 6); char.setAngle(pose === 'exitDoor' ? 7 : -6); break;
       case 'run':
-        g.lineTo(28, 12); g.lineTo(-20, 12); char.setAngle(-16); break;
+        body.lineTo(28, 4); body.lineTo(-20, 4); char.setAngle(-16); break;
       case 'hesitate':
-        g.lineTo(14, 12); g.lineTo(-18, 12); char.setAngle(8); break;
+        body.lineTo(14, 8); body.lineTo(-18, 8); char.setAngle(8); break;
       case 'tired':
-        g.lineTo(14, 14); g.lineTo(-16, 14); char.setAngle(18); break;
+        body.lineTo(14, 10); body.lineTo(-16, 10); char.setAngle(18); break;
       case 'collapsed':
-        g.lineTo(34, 16); g.lineTo(-34, 16); char.setAngle(86); char.y += 28; break;
+        body.lineTo(34, 8); body.lineTo(-34, 8); char.setAngle(86); break;
       case 'lookUp':
-        g.lineTo(18, 18); g.lineTo(-16, 18); char.setAngle(-12); break;
+        body.lineTo(18, 12); body.lineTo(-16, 12); char.setAngle(-12); break;
       case 'rise':
-        g.lineTo(20, 18); g.lineTo(-20, 18); char.setAngle(-4); break;
+        body.lineTo(20, 12); body.lineTo(-20, 12); char.setAngle(-4); break;
       case 'sitBack':
-        g.lineTo(20, 2); g.lineTo(-20, 2); char.y += 14; break;
+        body.lineTo(20, -4); body.lineTo(-20, -4); break;
       default:
-        g.lineTo(18, 16); g.lineTo(-18, 16);
+        body.lineTo(18, 10); body.lineTo(-18, 10);
     }
-    g.closePath();
-    g.fill();
-    char.add(g);
-    this.mainLayer.add(char);
+    body.closePath();
+    body.fill();
+
+    legs.lineStyle(4, 0xbdbdbd, 1);
+    if (pose === 'run') {
+      legs.lineBetween(-10, 4, -30, 24);
+      legs.lineBetween(10, 4, 32, 18);
+    } else if (pose === 'walk' || pose === 'enterDoor' || pose === 'exitDoor') {
+      legs.lineBetween(-8, 6, -22, 24);
+      legs.lineBetween(8, 6, 22, 22);
+    } else if (pose === 'collapsed') {
+      legs.lineBetween(-28, 8, -52, 12);
+      legs.lineBetween(24, 8, 48, 14);
+    } else if (pose === 'sitBack') {
+      legs.lineBetween(-12, -4, -28, 12);
+      legs.lineBetween(12, -4, 30, 10);
+    } else {
+      legs.lineBetween(-8, 8, -16, 24);
+      legs.lineBetween(8, 8, 16, 24);
+    }
+
+    char.add([legs, body, head]);
+
+    if (pose === 'walk' || pose === 'run') {
+      this.applyWalkCycle(body, legs, pose);
+    }
+  }
+
+  private applyWalkCycle(body: Phaser.GameObjects.Graphics, legs: Phaser.GameObjects.Graphics, pose: CharacterPose) {
+    const duration = pose === 'run' ? 180 : 260;
+    this.ambientCharacterTweens.push(
+      this.tweens.add({ targets: body, y: -3, duration, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }),
+      this.tweens.add({ targets: legs, y: 3, angle: pose === 'run' ? 5 : 3, duration, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' }),
+    );
+  }
+
+  private hasSpecialPoseMotion(shot: CutsceneShot) {
+    return shot.characterPose === 'enterDoor'
+      || shot.characterPose === 'exitDoor'
+      || shot.characterPose === 'collapsed'
+      || shot.characterPose === 'rise'
+      || shot.id.includes('oldDoorReturn')
+      || shot.id.includes('glamourDoorReturn');
+  }
+
+  private applyPoseEntranceMotion(shot: CutsceneShot, char: Phaser.GameObjects.Container, x: number, y: number, duration: number) {
+    switch (shot.characterPose) {
+      case 'enterDoor':
+        char.setPosition(x - 28, y);
+        this.trackShotTween(this.tweens.add({ targets: char, x: x + 24, y: y - 24, alpha: 0.74, duration, ease: 'Sine.easeInOut' }));
+        break;
+      case 'exitDoor':
+        char.setPosition(x + 32, y - 24);
+        this.trackShotTween(this.tweens.add({ targets: char, x, y, alpha: 1, duration, ease: 'Sine.easeOut' }));
+        break;
+      case 'collapsed':
+        char.y = y + 28;
+        this.trackShotTween(this.tweens.add({ targets: char, y: y + 34, angle: 90, alpha: 0.86, duration: 140, yoyo: true, repeat: 1, ease: 'Quad.easeInOut' }));
+        break;
+      case 'rise':
+        char.setPosition(x, y + 34);
+        this.trackShotTween(this.tweens.add({ targets: char, y, duration: shot.autoNext ? duration : Math.max(duration, 1100), ease: 'Sine.easeOut' }));
+        break;
+      default:
+        if (shot.id.includes('oldDoorReturn') || shot.id.includes('glamourDoorReturn')) {
+          char.setPosition(x + 32, y - 24);
+          this.trackShotTween(this.tweens.add({ targets: char, x, y, alpha: 1, duration, ease: 'Sine.easeOut' }));
+        }
+    }
+  }
+
+  private trackShotTween(tween: Phaser.Tweens.Tween) {
+    this.activeShotTweens.add(tween);
+    tween.once(Phaser.Tweens.Events.TWEEN_COMPLETE, () => {
+      this.activeShotTweens.delete(tween);
+    });
+  }
+
+  private completeShotTweens() {
+    [...this.activeShotTweens].forEach((tween) => tween.complete());
+    this.activeShotTweens.clear();
+  }
+
+  private clearShotTweens(complete: boolean) {
+    if (complete) {
+      this.completeShotTweens();
+      return;
+    }
+
+    [...this.activeShotTweens].forEach((tween) => tween.remove());
+    this.activeShotTweens.clear();
+    this.clearAmbientCharacterTweens();
+  }
+
+  private clearAmbientCharacterTweens() {
+    this.ambientCharacterTweens.forEach((tween) => tween.remove());
+    this.ambientCharacterTweens = [];
+  }
+
+  private destroyCharacterContainer() {
+    this.clearAmbientCharacterTweens();
+    this.characterContainer?.destroy(true);
+    this.characterContainer = undefined;
   }
 
   private drawCenterFocusOverlay() {
@@ -387,8 +618,12 @@ export class RoadScene extends Phaser.Scene {
     this.scene.restart();
   }
 
-  private handleNextShot() {
+  private handleNextShot(completeTweens = true) {
     if (this.isTransitioning || this.currentNode.nodeType !== 'cutscene') return;
+    if (completeTweens) {
+      this.autoTimer?.remove(false);
+      this.completeShotTweens();
+    }
     const total = this.currentNode.shots?.length || 0;
     if (this.shotIndex < total - 1) {
       this.shotIndex += 1;
@@ -402,6 +637,8 @@ export class RoadScene extends Phaser.Scene {
     if (this.isTransitioning) return;
     this.isTransitioning = true;
     this.autoTimer?.remove(false);
+    this.clearShotTweens(false);
+    this.destroyCharacterContainer();
     const next = this.flowManager.completeCurrentNode();
     this.cameras.main.fadeOut(450, 0, 0, 0);
     this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -411,6 +648,14 @@ export class RoadScene extends Phaser.Scene {
       }
       
       if (next.nodeType === 'interaction' || next.nodeType === 'puzzle') {
+    this.cameras.main.fadeOut(450, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
+      if (progress < 1) return;
+      if (!next) return;
+      if (
+        next.nodeType === 'interaction' ||
+        next.nodeType === 'routePuzzle' ||
+        next.nodeType === 'puzzle'
+      ) {
         this.scene.start('InteractionScene');
       } else if (next.nodeType === 'final') {
         this.scene.start('FinalQuestionScene');
