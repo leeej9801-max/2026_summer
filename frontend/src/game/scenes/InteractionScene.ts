@@ -135,8 +135,9 @@ export class InteractionScene extends Phaser.Scene {
     this.flowManager.solveInteraction(this.node.id, this.node.interaction.successNodeId);
 
     this.time.delayedCall(850, () => {
-      this.cameras.main.fadeOut(500, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-        if (progress === 1) this.scene.start('RoadScene');
+      this.cameras.main.fadeOut(500, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('RoadScene');
       });
     });
   }

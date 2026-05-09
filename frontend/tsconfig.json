@@ -5,7 +5,7 @@
     "module": "esnext",
     "lib": ["es2023", "dom", "dom.iterable"],
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "5.0",
 
     /* Bundler mode */
     "moduleResolution": "bundler",

@@ -26,9 +26,13 @@ export class RoadScene extends Phaser.Scene {
     this.currentNode = this.flowManager.getCurrentNode();
     this.routeByNodeType();
 
-    const { width, height } = this.cameras.main;
-    const clickArea = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0).setInteractive();
-    clickArea.on('pointerdown', () => this.handleNextShot());
+    const clickArea = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0)
+      .setInteractive()
+      .setScrollFactor(0);
+    clickArea.on('pointerdown', () => {
+      console.log(`[RoadScene] Clicked. Current shot: ${this.shotIndex}, NodeType: ${this.currentNode.nodeType}, transitioning: ${this.isTransitioning}`);
+      this.handleNextShot();
+    });
 
     const resetBtn = this.add.text(width - 20, 20, '[ Reset ]', {
       fontSize: '11px',
@@ -359,9 +363,13 @@ export class RoadScene extends Phaser.Scene {
     this.isTransitioning = true;
     this.autoTimer?.remove(false);
     const next = this.flowManager.completeCurrentNode();
-    this.cameras.main.fadeOut(450, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-      if (progress < 1) return;
-      if (!next) return;
+    this.cameras.main.fadeOut(450, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+      if (!next) {
+        this.isTransitioning = false;
+        return;
+      }
+      
       if (next.nodeType === 'interaction' || next.nodeType === 'puzzle') {
         this.scene.start('InteractionScene');
       } else if (next.nodeType === 'final') {
