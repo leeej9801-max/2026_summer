@@ -37,8 +37,11 @@ export class StoryFlowManager {
     return this.getCurrentNode();
   }
 
-  public solveInteraction(nodeId: string, successNodeId: string) {
+  public solveInteraction(nodeId: string, successNodeId: string, routeFragmentReward?: string) {
     this.progress.markGateSolved(nodeId);
+    if (routeFragmentReward) {
+      this.progress.collectRouteFragment(routeFragmentReward);
+    }
     this.progress.markNodeComplete(nodeId);
     this.goToNode(successNodeId);
   }
