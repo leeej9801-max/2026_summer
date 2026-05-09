@@ -1,22 +1,17 @@
 import Phaser from 'phaser';
 import { SceneFlowManager } from '../systems/SceneFlowManager.ts';
-import { AssetKeys } from '../config/assetKeys.ts';
-import { ScenarioStep, SceneObject } from '../types/scenario.types.ts';
+import { ScenarioStep } from '../types/scenario.types.ts';
 
 export class RoadScene extends Phaser.Scene {
   private flowManager: SceneFlowManager;
   
-  // Containers for organized drawing
-  private bgLayer!: Phaser.GameObjects.Container;
-  private objLayer!: Phaser.GameObjects.Container;
-  private charLayer!: Phaser.GameObjects.Container;
+  // Visual Layers (Redrawn every cut)
+  private mainLayer!: Phaser.GameObjects.Container;
   private uiLayer!: Phaser.GameObjects.Container;
   private fxLayer!: Phaser.GameObjects.Container;
 
-  // UI Components
-  private mainText!: Phaser.GameObjects.Text;
-  private titleText!: Phaser.GameObjects.Text;
-  private logPrefix!: Phaser.GameObjects.Text;
+  // Persistence for state
+  private isTransitioning: boolean = false;
 
   constructor() {
     super('RoadScene');
@@ -27,24 +22,22 @@ export class RoadScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     // Initialize Layers
-    this.bgLayer = this.add.container(0, 0);
-    this.objLayer = this.add.container(0, 0);
-    this.charLayer = this.add.container(0, 0);
+    this.mainLayer = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0);
     this.uiLayer = this.add.container(0, 0);
 
     // Initial Render
     this.renderCurrentCut(false);
 
-    // Global Click Area
+    // Global Click Handler
     const clickArea = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0)
       .setInteractive();
     clickArea.on('pointerdown', () => this.handleNext());
 
-    // Reset Button (Minimal)
-    const resetBtn = this.add.text(width - 20, 20, '[ SYSTEM_RESET ]', {
-      fontSize: '12px',
-      color: '#444444',
+    // Reset Button (Very Subtle)
+    const resetBtn = this.add.text(width - 20, 20, '[ Reset ]', {
+      fontSize: '11px',
+      color: '#333333',
       fontFamily: 'monospace'
     }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
     resetBtn.on('pointerdown', () => {
@@ -55,274 +48,284 @@ export class RoadScene extends Phaser.Scene {
 
   private renderCurrentCut(animate: boolean = true) {
     const step = this.flowManager.getCurrentStep();
-    const { width, height } = this.cameras.main;
 
-    // 1. Clear current scene content
-    this.bgLayer.removeAll(true);
-    this.objLayer.removeAll(true);
-    this.charLayer.removeAll(true);
+    // 1. Clear everything for a fresh draw
+    this.mainLayer.removeAll(true);
     this.fxLayer.removeAll(true);
     this.uiLayer.removeAll(true);
 
-    // 2. Render Background
-    this.drawBackground(step.backgroundKey);
+    // 2. Draw Background & Environment based on Mood
+    this.drawEnvironment(step);
 
-    // 3. Render Objects
-    if (step.objects) {
-      step.objects.forEach(obj => this.drawObject(obj));
-    }
+    // 3. Draw Static Objects (Doors, Light, Campfire)
+    this.drawStaticObjects(step);
 
-    // 4. Render Character
-    if (step.characterKey) {
+    // 4. Draw Character based on Pose
+    if (step.characterPose && step.characterPose !== "none") {
       this.drawCharacter(step);
     }
 
-    // 5. Render Effects
-    if (step.effects) {
-      step.effects.forEach(fx => this.applyEffect(fx));
-    }
+    // 5. Apply Effects (Storm, Shake, etc.)
+    this.applyEffects(step);
 
-    // 6. Render UI (Text)
+    // 6. Draw UI (Subtle Text)
     this.drawUI(step);
 
-    // Transition Animation
+    // Fade in for each cut to give that "animatic" transition
     if (animate) {
-      this.cameras.main.fadeIn(500, 0, 0, 0);
+      this.cameras.main.fadeIn(400, 0, 0, 0);
     }
   }
 
-  // --- Drawing Helpers ---
-
-  private drawBackground(key: string) {
+  private drawEnvironment(step: ScenarioStep) {
     const { width, height } = this.cameras.main;
-    
-    // Base Background (Gray/Dark)
-    const bg = this.add.rectangle(width / 2, height / 2, width, height, 0x111111);
-    this.bgLayer.add(bg);
-
-    // Road/Horizon Fallback
     const g = this.add.graphics();
-    g.lineStyle(1, 0x333333);
     
-    if (key === AssetKeys.Backgrounds.CampfireEmpty || key === AssetKeys.Backgrounds.CampfireFinal) {
-      // Small clearing instead of road
-      g.strokeCircle(width / 2, height * 0.75, width / 4);
-    } else {
-      // Perspective Road
-      g.lineBetween(0, height * 0.7, width, height * 0.7); // Horizon
-      g.lineBetween(width * 0.4, height * 0.7, 0, height); // Left edge
-      g.lineBetween(width * 0.6, height * 0.7, width, height); // Right edge
+    // Default dark world
+    g.fillStyle(0x0a0a0a, 1);
+    g.fillRect(0, 0, width, height);
+
+    // Horizon line
+    g.lineStyle(1, 0x1a1a1a, 0.5);
+    g.lineBetween(0, height * 0.7, width, height * 0.7);
+
+    // Mood specific backgrounds
+    if (step.sceneMood === "storm") {
+      g.fillStyle(0x050505, 1);
+      g.fillRect(0, 0, width, height);
+    } else if (step.sceneMood === "campfire-rest") {
+      // Small warm glow on ground
+      const radial = this.add.graphics();
+      radial.fillStyle(0x1a1000, 0.3);
+      radial.fillCircle(width / 2, height * 0.75, 200);
+      this.mainLayer.add(radial);
     }
-    this.bgLayer.add(g);
+
+    this.mainLayer.add(g);
   }
 
-  private drawObject(obj: SceneObject) {
+  private drawStaticObjects(step: ScenarioStep) {
     const { width, height } = this.cameras.main;
-    const x = obj.x * width;
-    const y = obj.y * height;
-    const scale = obj.scale || 1.0;
-    const alpha = obj.alpha !== undefined ? obj.alpha : 1.0;
-
-    const container = this.add.container(x, y);
-    container.setAlpha(alpha);
-
-    // Fallback logic for objects
     const g = this.add.graphics();
-    
-    switch (obj.key) {
-      case AssetKeys.Objects.DistantLight:
-        // Glowing point
-        for (let i = 0; i < 5; i++) {
-          g.fillStyle(0xffaa44, 0.2 / (i + 1));
-          g.fillCircle(0, 0, (10 + i * 10) * scale);
-        }
-        g.fillStyle(0xffffff, 0.8);
-        g.fillCircle(0, 0, 5 * scale);
-        break;
 
-      case AssetKeys.Objects.OldDoor:
-        g.lineStyle(2, 0x555555);
-        g.strokeRect(-30 * scale, -60 * scale, 60 * scale, 120 * scale);
-        g.fillStyle(0x222222, 0.8);
-        g.fillRect(-30 * scale, -60 * scale, 60 * scale, 120 * scale);
-        break;
+    // 1. Distant Light (ONLY 주황색/흰색 허용)
+    if (step.showDistantLight) {
+      const lx = width * 0.85;
+      const ly = height * 0.55;
+      let size = 2;
+      let alpha = 0.5;
 
-      case AssetKeys.Objects.GlamourDoor:
-        g.lineStyle(3, 0x9944ff); // Purplish outline
-        g.strokeRect(-40 * scale, -80 * scale, 80 * scale, 160 * scale);
-        g.fillStyle(0x000000, 0.6);
-        g.fillRect(-40 * scale, -80 * scale, 80 * scale, 160 * scale);
-        // Neon pulse effect (internal)
-        this.tweens.add({
-          targets: g,
-          alpha: 0.5,
-          duration: 500,
-          yoyo: true,
-          repeat: -1
-        });
-        break;
+      switch(step.distantLightStrength) {
+        case "tiny": size = 3; alpha = 0.4; break;
+        case "faint": size = 5; alpha = 0.6; break;
+        case "clear": size = 8; alpha = 0.8; break;
+        case "strong": size = 15; alpha = 1.0; break;
+      }
 
-      case AssetKeys.Objects.Campfire:
-        // Log
-        g.fillStyle(0x442211, 1);
-        g.fillRect(-20 * scale, 5 * scale, 40 * scale, 10 * scale);
-        // Flame
-        g.fillStyle(0xff6600, 0.8);
-        g.beginPath();
-        g.moveTo(-10 * scale, 0);
-        g.lineTo(0, -30 * scale);
-        g.lineTo(10 * scale, 0);
-        g.closePath();
-        g.fill();
-        break;
-
-      case AssetKeys.Objects.WaitingFigureBack:
-        g.fillStyle(0x333333, 1);
-        g.fillCircle(0, -40 * scale, 15 * scale); // Head
-        g.beginPath();
-        g.moveTo(-20 * scale, -25 * scale);
-        g.lineTo(20 * scale, -25 * scale);
-        g.lineTo(25 * scale, 20 * scale);
-        g.lineTo(-25 * scale, 20 * scale);
-        g.closePath();
-        g.fill();
-        break;
-
-      case AssetKeys.Objects.Log:
-        g.fillStyle(0x221100, 1);
-        g.fillRect(-50 * scale, -10 * scale, 100 * scale, 20 * scale);
-        break;
-
-      case AssetKeys.Objects.Blanket:
-        g.fillStyle(0x444444, 0.7);
-        g.fillEllipse(0, 0, 40 * scale, 20 * scale);
-        break;
-
-      case AssetKeys.Objects.StormOverlay:
-        g.lineStyle(1, 0xffffff, 0.2);
-        for(let i=0; i<10; i++) {
-          g.beginPath();
-          g.moveTo(Math.random()*200 - 100, Math.random()*200 - 100);
-          g.lineTo(Math.random()*200 - 100, Math.random()*200 - 100);
-          g.strokePath();
-        }
-        break;
+      // Bloom effect
+      for(let i=0; i<3; i++) {
+        g.fillStyle(0xff6600, alpha / (i + 1));
+        g.fillCircle(lx, ly, size * (i + 2));
+      }
+      g.fillStyle(0xffffff, 1);
+      g.fillCircle(lx, ly, size * 0.5);
     }
 
-    container.add(g);
-    this.objLayer.add(container);
+    // 2. Old Door (Cut 4-5)
+    if (step.showOldDoor) {
+      const dx = width * 0.7;
+      const dy = height * 0.7;
+      g.lineStyle(1, 0x333333);
+      g.strokeRect(dx - 30, dy - 100, 60, 100);
+      g.fillStyle(0x000000, 0.8);
+      g.fillRect(dx - 30, dy - 100, 60, 100);
+      
+      if (step.sceneMood === "door1-return") {
+        g.setAlpha(0.3); // Fade out the door we just left
+      }
+    }
+
+    // 3. Glamour Door (Cut 6-8)
+    if (step.showGlamourDoor) {
+      const dx = width * 0.7;
+      const dy = height * 0.7;
+      const moodColor = step.sceneMood === "door2-return" ? 0x222222 : 0x5500ff;
+      g.lineStyle(2, moodColor, 0.8);
+      g.strokeRect(dx - 40, dy - 130, 80, 130);
+      g.fillStyle(0x000000, 0.9);
+      g.fillRect(dx - 40, dy - 130, 80, 130);
+      
+      if (step.sceneMood === "door2") {
+        // Subtle neon glow
+        const glow = this.add.graphics();
+        glow.lineStyle(4, 0x5500ff, 0.2);
+        glow.strokeRect(dx - 45, dy - 135, 90, 140);
+        this.mainLayer.add(glow);
+      }
+    }
+
+    // 4. Campfire (Cut 16-17)
+    if (step.showCampfire) {
+      const cx = width / 2;
+      const cy = height * 0.78;
+      // Flame
+      g.fillStyle(0xff4400, 1);
+      g.fillTriangle(cx - 10, cy, cx + 10, cy, cx, cy - 25);
+      g.fillStyle(0xffaa00, 0.8);
+      g.fillTriangle(cx - 6, cy, cx + 6, cy, cx, cy - 15);
+      
+      // Logs
+      g.fillStyle(0x221100, 1);
+      g.fillRect(cx - 15, cy - 2, 30, 6);
+    }
+
+    // 5. Log Seat
+    if (step.showLogSeat) {
+      g.fillStyle(0x1a0d00, 1);
+      g.fillRect(width / 2 - 100, height * 0.8, 200, 20);
+    }
+
+    // 6. Waiting Figure (BACK ONLY)
+    if (step.showWaitingFigure) {
+      const fx = width * 0.58;
+      const fy = height * 0.8;
+      g.fillStyle(0x222222, 1);
+      // Head
+      g.fillCircle(fx, fy - 45, 12);
+      // Cape/Body
+      g.beginPath();
+      g.moveTo(fx - 20, fy - 35);
+      g.lineTo(fx + 20, fy - 35);
+      g.lineTo(fx + 25, fy);
+      g.lineTo(fx - 25, fy);
+      g.closePath();
+      g.fill();
+    }
+
+    this.mainLayer.add(g);
   }
 
   private drawCharacter(step: ScenarioStep) {
     const { width, height } = this.cameras.main;
     const x = (step.characterX || 0.5) * width;
     const y = (step.characterY || 0.7) * height;
-    const scale = step.characterScale || 1.0;
-
+    
     const char = this.add.container(x, y);
     const g = this.add.graphics();
-    g.fillStyle(0xcccccc, 1);
+    g.fillStyle(0xbbbbbb, 1);
 
-    // Minimalist Character: Head + Cape/Body
-    // Head
-    g.fillCircle(0, -50 * scale, 18 * scale);
+    // Minimalist: Circle Head + Cape Body
+    g.fillCircle(0, -45, 14); // Head
     
-    // Body (Cape shape)
     g.beginPath();
-    g.moveTo(-20 * scale, -35 * scale);
-    g.lineTo(20 * scale, -35 * scale);
-    
-    switch (step.characterKey) {
-      case AssetKeys.Characters.Tired:
-        g.lineTo(15 * scale, 10 * scale);
-        g.lineTo(-15 * scale, 10 * scale);
-        char.setAngle(10); // Slouch
+    g.moveTo(-18, -32);
+    g.lineTo(18, -32);
+
+    switch(step.characterPose) {
+      case "walk":
+      case "run":
+        g.lineTo(22, 10);
+        g.lineTo(-22, 10);
+        char.setAngle(step.characterPose === "run" ? -15 : -5);
         break;
-      case AssetKeys.Characters.Collapsed:
-        g.lineTo(30 * scale, 15 * scale);
-        g.lineTo(-30 * scale, 15 * scale);
-        char.setAngle(80); // Lying down
-        char.y += 30 * scale;
+      case "tired":
+      case "hesitate":
+        g.lineTo(15, 12);
+        g.lineTo(-15, 12);
+        char.setAngle(15);
         break;
-      case AssetKeys.Characters.SitBack:
-        g.lineTo(20 * scale, 0);
-        g.lineTo(-20 * scale, 0);
+      case "collapsed":
+        g.lineTo(30, 20);
+        g.lineTo(-30, 20);
+        char.setAngle(85);
+        char.y += 25;
         break;
-      case AssetKeys.Characters.Run:
-        g.lineTo(25 * scale, 0);
-        g.lineTo(-25 * scale, 0);
-        char.setAngle(-15); // Leaning forward
+      case "lookUp":
+        g.lineTo(15, 20);
+        g.lineTo(-15, 20);
+        char.setAngle(-10);
         break;
-      default: // Stand/Walk
-        g.lineTo(22 * scale, 15 * scale);
-        g.lineTo(-22 * scale, 15 * scale);
+      case "sitBack":
+        g.lineTo(18, 0);
+        g.lineTo(-18, 0);
+        char.y += 10;
+        break;
+      default: // stand
+        g.lineTo(18, 15);
+        g.lineTo(-18, 15);
         break;
     }
     g.closePath();
     g.fill();
 
-    if (step.characterFlipX) g.setScale(-1, 1);
+    // Blanket Gesture
+    if (step.showBlanketGesture) {
+      g.fillStyle(0x333333, 0.6);
+      g.fillEllipse(0, -10, 45, 25);
+    }
 
     char.add(g);
-    this.charLayer.add(char);
+    this.mainLayer.add(char);
   }
 
-  private applyEffect(fx: any) {
-    switch (fx.type) {
-      case 'shake':
-        this.cameras.main.shake(1000, 0.005);
-        break;
-      case 'storm':
-        // Custom noise logic could go here
-        break;
-      case 'warmLight':
-        const rect = this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, 
-          this.cameras.main.width, this.cameras.main.height, 0xffaa00, 0.05);
-        this.fxLayer.add(rect);
-        break;
+  private applyEffects(step: ScenarioStep) {
+    const { width, height } = this.cameras.main;
+
+    if (step.showStorm) {
+      const stormG = this.add.graphics();
+      stormG.lineStyle(1, 0xffffff, 0.1);
+      for(let i=0; i<15; i++) {
+        const x1 = Math.random() * width;
+        const y1 = Math.random() * height;
+        stormG.lineBetween(x1, y1, x1 + 100, y1 + (Math.random() - 0.5) * 50);
+      }
+      this.fxLayer.add(stormG);
+      this.cameras.main.shake(1000, 0.003);
+    }
+
+    if (step.sceneMood === "collapse") {
+      this.cameras.main.setAlpha(0.8);
+    } else {
+      this.cameras.main.setAlpha(1.0);
     }
   }
 
   private drawUI(step: ScenarioStep) {
     const { width, height } = this.cameras.main;
 
-    // Text Box (Subtle)
-    const box = this.add.rectangle(width / 2, height - 60, width - 200, 80, 0x000000, 0.6);
+    const box = this.add.rectangle(width / 2, height - 60, width - 240, 70, 0x000000, 0.4);
     this.uiLayer.add(box);
 
-    this.titleText = this.add.text(width / 2, height - 85, step.title, {
-      fontSize: '16px',
-      color: '#aaaaaa',
+    const txt = this.add.text(width / 2, height - 60, '', {
+      fontSize: '17px',
+      color: '#eeeeee',
+      align: 'center',
+      wordWrap: { width: width - 300 },
       fontFamily: 'sans-serif'
     }).setOrigin(0.5);
-    this.uiLayer.add(this.titleText);
+    this.uiLayer.add(txt);
 
-    this.mainText = this.add.text(width / 2, height - 55, '', {
-      fontSize: '18px',
-      color: '#ffffff',
-      align: 'center',
-      wordWrap: { width: width - 250 }
-    }).setOrigin(0.5);
-    this.uiLayer.add(this.mainText);
-
-    // Typewriter
+    // Fast typewriter
     let i = 0;
     this.time.addEvent({
       callback: () => {
-        if (this.mainText) this.mainText.text += step.text[i++];
+        if (txt) txt.text += step.text[i++];
       },
       repeat: step.text.length - 1,
-      delay: 20
+      delay: 15
     });
   }
 
   private handleNext() {
+    if (this.isTransitioning) return;
+
     if (this.flowManager.nextStep()) {
       this.renderCurrentCut(true);
     } else {
-      // Transitions to Final Question after 2 seconds as requested
-      this.time.delayedCall(2000, () => {
-        this.cameras.main.fadeOut(1000, 0, 0, 0, (_camera: any, progress: number) => {
+      // Final transition logic for Cut 17
+      this.isTransitioning = true;
+      this.time.delayedCall(2500, () => {
+        this.cameras.main.fadeOut(1500, 0, 0, 0, (_camera: any, progress: number) => {
           if (progress === 1) {
             this.scene.start('FinalQuestionScene');
           }
