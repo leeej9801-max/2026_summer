@@ -1,3 +1,8 @@
+export type StoryNodeType = 'cutscene' | 'interaction' | 'puzzle' | 'routePuzzle' | 'transition' | 'final';
+
+export type InteractionType = 'answer' | 'physicalAction' | 'choice' | 'routePuzzle' | 'messageInput';
+
+export type CaptionType = 'inner' | 'system' | 'hint' | 'none';
 export type StoryNodeType =
   | 'cutscene'
   | 'interaction'
@@ -52,6 +57,35 @@ export type SceneObject = {
   tint?: number;
 };
 
+export type PromptLine = {
+  text: string;
+  placement: 'bottom' | 'nearObject' | 'smallPanel';
+};
+
+export type RouteDirection =
+  | 'FORWARD'
+  | 'LEFT_BRANCH'
+  | 'RETURN_MAIN'
+  | 'RIGHT_BRANCH'
+  | 'RETURN_SECOND'
+  | 'TOWARD_LIGHT';
+
+export type WorldLayoutKey =
+  | 'emptyRoad'
+  | 'roadWithDistantLight'
+  | 'oldDoorApproach'
+  | 'oldDoorInterior'
+  | 'oldDoorReturn'
+  | 'glamourDoorApproach'
+  | 'glamourDoorInterior'
+  | 'glamourDoorReturn'
+  | 'stormRoad'
+  | 'collapsedRoad'
+  | 'lightRecovery'
+  | 'runToLight'
+  | 'campfireArrival'
+  | 'campfireRest';
+
 export type CameraCue = {
   zoom?: number;
   panX?: number;
@@ -75,6 +109,8 @@ export type PromptLine = {
 
 export type CutsceneShot = {
   id: string;
+  worldLayout: WorldLayoutKey;
+  backgroundKey?: string;
   worldLayout: WorldLayout;
   backgroundKey: string;
   characterPose?: CharacterPose;
@@ -86,6 +122,7 @@ export type CutsceneShot = {
   durationMs?: number;
   caption?: CaptionLine;
   prompt?: PromptLine;
+  routeCue?: RouteDirection;
   soundCue?: string;
   autoNext?: boolean;
 };
@@ -99,6 +136,8 @@ export type InteractionGate = {
   prompt: string;
   shortPrompt?: string;
   description?: string;
+  shortPrompt?: string;
+  routeFragmentReward?: string;
   answerKeys?: string[];
   hintIds?: string[];
   successNodeId: string;
