@@ -1,7 +1,18 @@
 import Phaser from 'phaser';
 import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
-import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
+import type { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
+import {
+  drawCampfire,
+  drawDistantLight,
+  drawGlamourDoor,
+  drawNotebookTexture,
+  drawOldDoor,
+  drawSketchCharacter,
+  drawSketchRoad,
+  drawStormOverlay,
+  drawWaitingFigureBack,
+} from '../render/SketchRenderer.ts';
 
 const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
 
@@ -125,13 +136,8 @@ export class RoadScene extends Phaser.Scene {
       g.fillRect(0, height * 0.68, width, height * 0.32);
     }
 
-    if (!bg.includes('campfire')) {
-      g.lineStyle(1, bg.includes('cold') ? 0x282848 : 0x252525, 0.8);
-      g.lineBetween(0, height * 0.68, width, height * 0.68);
-      g.lineStyle(2, bg.includes('cold') ? 0x1d1d38 : 0x1f1f1f, 0.8);
-      g.lineBetween(width * 0.38, height, width * 0.48, height * 0.68);
-      g.lineBetween(width * 0.66, height, width * 0.56, height * 0.68);
-    }
+    drawSketchRoad(g, width, height, bg.includes('campfire') ? 'campfire' : bg.includes('cold') ? 'cold' : 'neutral');
+    drawNotebookTexture(g, width, height);
 
     this.mainLayer.add(g);
   }
@@ -146,26 +152,26 @@ export class RoadScene extends Phaser.Scene {
 
     switch (object.key) {
       case 'distantLightTiny':
-        this.drawLight(g, x, y, 4 * scale, 0.42);
+        drawDistantLight(g, x, y, 4 * scale, 0.42);
         break;
       case 'distantLightFaint':
-        this.drawLight(g, x, y, 7 * scale, 0.6);
+        drawDistantLight(g, x, y, 7 * scale, 0.6);
         break;
       case 'distantLightClear':
-        this.drawLight(g, x, y, 12 * scale, 0.85);
+        drawDistantLight(g, x, y, 12 * scale, 0.85);
         break;
       case 'distantLightStrong':
-        this.drawLight(g, x, y, 18 * scale, 1);
+        drawDistantLight(g, x, y, 18 * scale, 1);
         break;
       case 'oldDoorClosed':
       case 'oldDoorFaded':
       case 'oldDoorOpen':
-        this.drawOldDoor(g, x, y, object.key, scale);
+        drawOldDoor(g, x, y, object.key, scale);
         break;
       case 'glamourDoorClosed':
       case 'glamourDoorFaded':
       case 'glamourDoorOpen':
-        this.drawGlamourDoor(g, x, y, object.key, scale);
+        drawGlamourDoor(g, x, y, object.key, scale);
         break;
       case 'emptyFrame':
         g.lineStyle(2, 0x3a3a3a, 0.8);
@@ -184,13 +190,13 @@ export class RoadScene extends Phaser.Scene {
         g.strokeTriangle(x - 22, y + 18, x + 22, y + 18, x, y - 26);
         break;
       case 'stormLines':
-        this.drawStormLines(g, width, height);
+        drawStormOverlay(g, width, height);
         break;
       case 'campfire':
-        this.drawCampfire(g, x, y);
+        drawCampfire(g, x, y);
         break;
       case 'waitingFigureBack':
-        this.drawWaitingFigure(g, x, y);
+        drawWaitingFigureBack(g, x, y);
         break;
       case 'logSeat':
         g.fillStyle(0x261407, 1);
@@ -215,43 +221,6 @@ export class RoadScene extends Phaser.Scene {
     return 1;
   }
 
-  private drawLight(g: Phaser.GameObjects.Graphics, x: number, y: number, size: number, alpha: number) {
-    for (let i = 4; i >= 1; i -= 1) {
-      g.fillStyle(0xff6a00, alpha / (i * 2.2));
-      g.fillCircle(x, y, size * i);
-    }
-    g.fillStyle(0xfff3c4, alpha);
-    g.fillCircle(x, y, Math.max(2, size * 0.45));
-  }
-
-  private drawOldDoor(g: Phaser.GameObjects.Graphics, x: number, y: number, key: string, scale: number) {
-    const a = key === 'oldDoorFaded' ? 0.28 : 1;
-    const open = key === 'oldDoorOpen';
-    g.lineStyle(2, 0x595959, a);
-    g.fillStyle(0x090909, 0.95 * a);
-    g.fillRect(x - 38 * scale, y - 120 * scale, 76 * scale, 120 * scale);
-    g.strokeRect(x - 38 * scale, y - 120 * scale, 76 * scale, 120 * scale);
-    if (open) {
-      g.fillStyle(0xffffff, 0.08);
-      g.fillRect(x - 22 * scale, y - 110 * scale, 44 * scale, 106 * scale);
-    }
-  }
-
-  private drawGlamourDoor(g: Phaser.GameObjects.Graphics, x: number, y: number, key: string, scale: number) {
-    const a = key === 'glamourDoorFaded' ? 0.24 : 0.95;
-    const open = key === 'glamourDoorOpen';
-    g.lineStyle(4, 0x6d5cff, a);
-    g.fillStyle(0x050611, 0.98);
-    g.fillRect(x - 48 * scale, y - 145 * scale, 96 * scale, 145 * scale);
-    g.strokeRect(x - 48 * scale, y - 145 * scale, 96 * scale, 145 * scale);
-    g.lineStyle(1, 0x73d9ff, a * 0.8);
-    g.strokeRect(x - 58 * scale, y - 155 * scale, 116 * scale, 165 * scale);
-    if (open) {
-      g.fillStyle(0x6d5cff, 0.18);
-      g.fillRect(x - 35 * scale, y - 132 * scale, 70 * scale, 128 * scale);
-    }
-  }
-
   private drawColdCards(g: Phaser.GameObjects.Graphics, x: number, y: number) {
     ['성과', '비교', '스펙'].forEach((_, index) => {
       g.lineStyle(1, 0x77ccff, 0.55);
@@ -268,90 +237,23 @@ export class RoadScene extends Phaser.Scene {
     }
   }
 
-  private drawStormLines(g: Phaser.GameObjects.Graphics, width: number, height: number) {
-    g.lineStyle(2, 0xddddff, 0.12);
-    for (let i = 0; i < 24; i += 1) {
-      const x1 = Math.random() * width;
-      const y1 = Math.random() * height;
-      g.lineBetween(x1, y1, x1 + 180, y1 + (Math.random() - 0.5) * 90);
-    }
-  }
-
-  private drawCampfire(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    g.fillStyle(0xff4a00, 1);
-    g.fillTriangle(x - 18, y, x + 18, y, x, y - 48);
-    g.fillStyle(0xffc15a, 0.95);
-    g.fillTriangle(x - 9, y, x + 9, y, x, y - 30);
-    g.fillStyle(0x2b1507, 1);
-    g.fillRoundedRect(x - 30, y - 3, 60, 9, 4);
-  }
-
-  private drawWaitingFigure(g: Phaser.GameObjects.Graphics, x: number, y: number) {
-    g.fillStyle(0x242424, 1);
-    g.fillCircle(x, y - 48, 14);
-    g.beginPath();
-    g.moveTo(x - 24, y - 34);
-    g.lineTo(x + 24, y - 34);
-    g.lineTo(x + 32, y + 12);
-    g.lineTo(x - 32, y + 12);
-    g.closePath();
-    g.fill();
-  }
-
   private drawCharacter(pose: CharacterPose, xRatio: number, yRatio: number, scale: number) {
     const { width, height } = this.cameras.main;
-    const char = this.add.container(xRatio * width, yRatio * height);
-    char.setScale(scale);
-    const g = this.add.graphics();
-    g.fillStyle(0xbdbdbd, 1);
-    g.fillCircle(0, -46, 13);
-    g.beginPath();
-    g.moveTo(-18, -32);
-    g.lineTo(18, -32);
-
-    switch (pose) {
-      case 'walk':
-      case 'enterDoor':
-      case 'exitDoor':
-        g.lineTo(23, 12); g.lineTo(-18, 12); char.setAngle(pose === 'exitDoor' ? 7 : -6); break;
-      case 'run':
-        g.lineTo(28, 12); g.lineTo(-20, 12); char.setAngle(-16); break;
-      case 'hesitate':
-        g.lineTo(14, 12); g.lineTo(-18, 12); char.setAngle(8); break;
-      case 'tired':
-        g.lineTo(14, 14); g.lineTo(-16, 14); char.setAngle(18); break;
-      case 'collapsed':
-        g.lineTo(34, 16); g.lineTo(-34, 16); char.setAngle(86); char.y += 28; break;
-      case 'lookUp':
-        g.lineTo(18, 18); g.lineTo(-16, 18); char.setAngle(-12); break;
-      case 'rise':
-        g.lineTo(20, 18); g.lineTo(-20, 18); char.setAngle(-4); break;
-      case 'sitBack':
-        g.lineTo(20, 2); g.lineTo(-20, 2); char.y += 14; break;
-      default:
-        g.lineTo(18, 16); g.lineTo(-18, 16);
-    }
-    g.closePath();
-    g.fill();
-    char.add(g);
-    this.mainLayer.add(char);
+    drawSketchCharacter(this, this.mainLayer, pose, xRatio * width, yRatio * height, scale);
   }
 
   private drawCenterFocusOverlay() {
     const { width, height } = this.cameras.main;
     const g = this.add.graphics();
-    const focusWidth = width * 0.68;
-    const focusHeight = height * 0.58;
-    const focusX = (width - focusWidth) / 2;
-    const focusY = height * 0.16;
 
-    g.fillStyle(0x000000, 0.2);
-    g.fillRect(0, 0, width, focusY);
-    g.fillRect(0, focusY + focusHeight, width, height - focusY - focusHeight);
-    g.fillRect(0, focusY, focusX, focusHeight);
-    g.fillRect(focusX + focusWidth, focusY, focusX, focusHeight);
-    g.lineStyle(2, 0xffffff, 0.08);
-    g.strokeRoundedRect(focusX, focusY, focusWidth, focusHeight, 28);
+    for (let i = 0; i < 5; i += 1) {
+      g.lineStyle(18 + i * 10, 0x000000, 0.018);
+      g.strokeEllipse(width / 2, height * 0.48, width * (0.96 - i * 0.05), height * (0.92 - i * 0.04));
+    }
+
+    g.fillStyle(0x000000, 0.035);
+    g.fillRect(0, 0, width, height * 0.08);
+    g.fillRect(0, height * 0.9, width, height * 0.1);
 
     this.fxLayer.add(g);
   }
