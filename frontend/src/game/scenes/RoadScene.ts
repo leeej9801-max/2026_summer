@@ -21,6 +21,11 @@ export class RoadScene extends Phaser.Scene {
   }
 
   create() {
+    this.isTransitioning = false;
+    this.shotIndex = 0;
+    this.autoTimer?.remove(false);
+
+    const { width, height } = this.cameras.main;
     this.mainLayer = this.add.container(0, 0);
     this.fxLayer = this.add.container(0, 0);
     this.uiLayer = this.add.container(0, 0);
