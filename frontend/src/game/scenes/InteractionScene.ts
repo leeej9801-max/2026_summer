@@ -135,7 +135,11 @@ export class InteractionScene extends Phaser.Scene {
     this.feedbackText?.setColor('#d7ffd7');
     this.feedbackText?.setText('성공했습니다. 다음 컷신이 열립니다.');
     this.answerElement?.setVisible(false);
-    this.flowManager.solveInteraction(this.node.id, this.node.interaction.successNodeId);
+    this.flowManager.solveInteraction(
+      this.node.id,
+      this.node.interaction.successNodeId,
+      this.node.interaction.routeFragmentReward,
+    );
 
     this.time.delayedCall(850, () => {
       this.cameras.main.fadeOut(500, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
