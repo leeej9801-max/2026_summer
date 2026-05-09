@@ -1,5 +1,6 @@
 import { FIRST_NODE_ID } from '../data/storyNodes.ts';
 import { GameProgress } from '../types/story.types.ts';
+import { RouteTraceManager } from './RouteTraceManager.ts';
 
 const STORAGE_KEY = 'road_game_progress_v2';
 
@@ -66,6 +67,7 @@ export class ProgressManager {
   public reset() {
     this.progress = emptyProgress();
     this.save();
+    RouteTraceManager.getInstance().reset();
   }
 
   private save() {

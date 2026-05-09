@@ -56,6 +56,10 @@ export type CutsceneShot = {
   autoNext?: boolean;
 };
 
+export type RouteFragmentReward = {
+  fragmentKey: string;
+};
+
 export type InteractionGate = {
   type: InteractionType;
   prompt: string;
@@ -63,6 +67,7 @@ export type InteractionGate = {
   answerKeys?: string[];
   hintIds?: string[];
   successNodeId: string;
+  routeFragmentReward?: RouteFragmentReward;
   failMessage?: string;
 };
 
