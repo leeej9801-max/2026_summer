@@ -8,6 +8,7 @@ const emptyProgress = (): GameProgress => ({
   completedNodeIds: [],
   usedHintIds: [],
   solvedGateIds: [],
+  routeFragmentIds: [],
 });
 
 export class ProgressManager {
@@ -50,6 +51,17 @@ export class ProgressManager {
 
   public isGateSolved(nodeId: string): boolean {
     return this.progress.solvedGateIds.includes(nodeId);
+  }
+
+  public collectRouteFragment(fragmentId: string) {
+    if (!this.progress.routeFragmentIds.includes(fragmentId)) {
+      this.progress.routeFragmentIds.push(fragmentId);
+      this.save();
+    }
+  }
+
+  public getRouteFragmentIds(): string[] {
+    return [...this.progress.routeFragmentIds];
   }
 
   public markHintUsed(hintId: string) {
@@ -96,6 +108,7 @@ export class ProgressManager {
         completedNodeIds: parsed.completedNodeIds || [],
         usedHintIds: parsed.usedHintIds || [],
         solvedGateIds: parsed.solvedGateIds || [],
+        routeFragmentIds: parsed.routeFragmentIds || [],
       };
     } catch {
       this.progress = emptyProgress();
