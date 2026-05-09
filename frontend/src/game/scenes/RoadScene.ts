@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
-import { CharacterPose, CutsceneShot, SceneObject, StoryNode } from '../types/story.types.ts';
+import { CharacterPose, CutsceneShot, PromptLine, SceneObject, StoryNode } from '../types/story.types.ts';
 import { createCaptionBox } from '../ui/createCaptionBox.ts';
 
 const isDevBuild = () => (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true;
@@ -80,6 +80,7 @@ export class RoadScene extends Phaser.Scene {
     this.drawCenterFocusOverlay();
     this.applyCameraCue(shot);
     this.uiLayer.add(createCaptionBox(this, shot.caption, this.cameras.main.width, this.cameras.main.height));
+    this.drawPromptLine(shot.prompt);
     this.drawShotCounter();
 
     if (animate || shot.camera?.fade === 'in') {
@@ -89,6 +90,44 @@ export class RoadScene extends Phaser.Scene {
     if (shot.autoNext) {
       this.autoTimer = this.time.delayedCall(shot.durationMs || 1800, () => this.handleNextShot());
     }
+  }
+
+  private drawPromptLine(prompt: PromptLine | undefined) {
+    if (!prompt || prompt.text.trim() === '') return;
+
+    const { width, height } = this.cameras.main;
+    const container = this.add.container(0, 0);
+    const isPanel = prompt.placement === 'panel';
+    const textStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+      fontSize: isPanel ? '21px' : '24px',
+      color: '#fff3d0',
+      align: 'center',
+      fontFamily: 'sans-serif',
+      lineSpacing: 4,
+      wordWrap: { width: isPanel ? 230 : 320 },
+    };
+    const label = this.add.text(0, 0, prompt.text, textStyle).setOrigin(0.5);
+    const bounds = label.getBounds();
+    const paddingX = isPanel ? 18 : 24;
+    const paddingY = isPanel ? 12 : 14;
+    const boxWidth = Math.max(bounds.width + paddingX * 2, isPanel ? 180 : 240);
+    const boxHeight = Math.max(bounds.height + paddingY * 2, isPanel ? 48 : 54);
+    const background = this.add.rectangle(0, 0, boxWidth, boxHeight, 0x17120a, isPanel ? 0.88 : 0.78)
+      .setStrokeStyle(1, 0xf0d89a, isPanel ? 0.52 : 0.38);
+
+    container.add([background, label]);
+
+    if (prompt.placement === 'object') {
+      container.setPosition((prompt.targetX ?? 0.66) * width, (prompt.targetY ?? 0.54) * height);
+      const pointer = this.add.triangle(0, boxHeight / 2 + 9, -9, 0, 9, 0, 0, 14, 0xf0d89a, 0.46);
+      container.add(pointer);
+    } else if (prompt.placement === 'panel') {
+      container.setPosition(width - boxWidth / 2 - 42, height * 0.28);
+    } else {
+      container.setPosition(width / 2, height - 156);
+    }
+
+    this.uiLayer.add(container);
   }
 
   private drawEnvironment(shot: CutsceneShot) {
