@@ -27,10 +27,14 @@ export const createInteractionGate = (
   const container = scene.add.container(x, y);
 
   const panel = scene.add.graphics();
-  panel.fillStyle(0x070707, 0.86);
-  panel.fillRoundedRect(-width / 2, -height / 2, width, height, 16);
-  panel.lineStyle(2, 0xf4d58d, 0.54);
-  panel.strokeRoundedRect(-width / 2, -height / 2, width, height, 16);
+  // Sketchy transparent box
+  panel.fillStyle(0x000000, 0.2);
+  panel.fillRect(-width / 2, -height / 2, width, height);
+  
+  panel.lineStyle(1, 0xffffff, 0.3);
+  panel.strokeRect(-width / 2, -height / 2, width, height);
+  panel.lineStyle(1, 0xffffff, 0.15);
+  panel.strokeRect(-width / 2 - 2, -height / 2 + 1, width + 1, height - 2);
 
   const prompt = scene.add.text(0, -58, options.shortPrompt, {
     fontSize: '20px',
@@ -44,13 +48,12 @@ export const createInteractionGate = (
   const answerElement = createAnswerInput(scene, 0, 28, {
     placeholder: options.placeholder,
     buttonLabel: options.buttonLabel,
-    width: width - 40,
+    panelWidth: width - 40,
     inputWidth: width - 112,
-    fontSize: 17,
+    inputFontSize: 17,
     buttonFontSize: 13,
     inputPadding: '9px 12px',
-    buttonPadding: '8px 16px',
-    buttonMarginTop: 8,
+    compact: true,
     onSubmit: options.onSubmit,
   });
 

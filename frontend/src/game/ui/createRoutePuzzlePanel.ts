@@ -35,41 +35,31 @@ const drawPaperFragment = (
 ): { paper: Phaser.GameObjects.Graphics; routeInk: Phaser.GameObjects.Graphics } => {
   const paper = scene.add.graphics();
   const routeInk = scene.add.graphics();
-  const paperAlpha = collected ? 0.95 : 0.22;
-  const edgeAlpha = collected ? 0.85 : 0.24;
+  const edgeAlpha = collected ? 0.8 : 0.2;
 
-  paper.fillStyle(0x2a2117, paperAlpha);
-  paper.beginPath();
-  paper.moveTo(-42, -35);
-  paper.lineTo(33, -40);
-  paper.lineTo(45, -8);
-  paper.lineTo(31, 39);
-  paper.lineTo(-37, 31);
-  paper.lineTo(-47, -6);
-  paper.closePath();
-  paper.fillPath();
-  paper.lineStyle(2, 0x8c7658, edgeAlpha);
-  paper.strokePath();
+  // Sketchy box instead of solid paper
+  paper.fillStyle(0x000000, collected ? 0.4 : 0.1);
+  paper.fillRect(-42, -42, 84, 84);
+  
+  paper.lineStyle(1, 0x555555, edgeAlpha);
+  paper.strokeRect(-42, -42, 84, 84);
+  paper.lineStyle(1, 0x777777, edgeAlpha * 0.5);
+  paper.strokeRect(-40, -44, 80, 88);
 
-  paper.lineStyle(1, 0x17120d, collected ? 0.62 : 0.28);
-  paper.lineBetween(-29, -18, 19, -25);
-  paper.lineBetween(-34, 2, 31, -5);
-  paper.lineBetween(-22, 20, 24, 16);
-  paper.lineStyle(2, 0xb09a73, collected ? 0.34 : 0.12);
-  paper.lineBetween(-33, -28, -7, -8);
-  paper.lineBetween(12, 10, 34, 28);
+  // Scratch marks
+  paper.lineStyle(1, 0x999999, collected ? 0.3 : 0.1);
+  paper.lineBetween(-30, -20, 20, -10);
+  paper.lineBetween(-20, 10, 30, 20);
+  paper.lineBetween(-10, -30, -5, 30);
 
-  routeInk.lineStyle(6, 0xf4d58d, collected ? 0.18 : 0.04);
+  // The actual route line (made to look like abstract scratches rather than a clear path)
+  routeInk.lineStyle(2, 0xffffff, collected ? 0.7 : 0.1);
   if (fragment.routeLine === 'vertical') {
-    routeInk.lineBetween(0, -34, 0, 34);
+    routeInk.lineBetween(-2, -38, 2, 38);
+    routeInk.lineBetween(1, -36, -1, 36);
   } else {
-    routeInk.lineBetween(-34, 0, 34, 0);
-  }
-  routeInk.lineStyle(2, 0xffffff, collected ? 0.1 : 0.02);
-  if (fragment.routeLine === 'vertical') {
-    routeInk.lineBetween(0, -26, 0, 26);
-  } else {
-    routeInk.lineBetween(-26, 0, 26, 0);
+    routeInk.lineBetween(-38, -2, 38, 2);
+    routeInk.lineBetween(-36, 1, 36, -1);
   }
 
   return { paper, routeInk };
@@ -122,8 +112,8 @@ export const createRoutePuzzlePanel = (
   const fragments = routeTraceManager.getCollectedFragments();
   const collectedFragments = Object.values(fragments);
   const container = scene.add.container(x, y);
-  const panel = scene.add.rectangle(0, 0, 610, 480, 0x070707, 0.92).setStrokeStyle(2, 0x4d4334);
-  const title = scene.add.text(0, -186, '경로 조각', {
+  const panel = scene.add.rectangle(0, 0, 610, 480, 0x000000, 0.4).setStrokeStyle(1, 0x555555);
+  const title = scene.add.text(0, -186, '조각난 흔적', {
     fontSize: '17px',
     color: '#d8d8d8',
     fontFamily: 'serif',
@@ -134,14 +124,14 @@ export const createRoutePuzzlePanel = (
     color: '#ffffff',
     fontFamily: 'serif',
   }).setOrigin(0.5);
-  const description = scene.add.text(0, -120, options.description || '클릭으로 조각을 90도씩 돌린 뒤 떠오르는 모양을 입력하세요.', {
+  const description = scene.add.text(0, -120, options.description || '클릭으로 조각을 회전하여 긁힌 선들을 맞춰보세요.', {
     fontSize: '15px',
     color: '#a9a9a9',
     align: 'center',
     fontFamily: 'sans-serif',
     wordWrap: { width: 540 },
   }).setOrigin(0.5);
-  const board = scene.add.rectangle(0, -8, 286, 246, 0x0d0b08, 0.98).setStrokeStyle(1, 0x33291d);
+  const board = scene.add.rectangle(0, -8, 286, 246, 0x000000, 0.2).setStrokeStyle(1, 0x444444);
   const statusText = scene.add.text(0, 132, '', {
     fontSize: '14px',
     color: '#8c8374',
@@ -157,7 +147,7 @@ export const createRoutePuzzlePanel = (
     const { paper, routeInk } = drawPaperFragment(scene, fragment, fragment.collected);
     const label = scene.add.text(0, 52, fragment.clueLabel, {
       fontSize: '10px',
-      color: '#c8b99e',
+      color: '#aaaaaa',
       align: 'center',
       fontFamily: 'sans-serif',
     }).setOrigin(0.5);

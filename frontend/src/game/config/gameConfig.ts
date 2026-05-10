@@ -5,6 +5,7 @@ import { TitleScene } from '../scenes/TitleScene.ts';
 import { RoadScene } from '../scenes/RoadScene.ts';
 import { InteractionScene } from '../scenes/InteractionScene.ts';
 import { FinalQuestionScene } from '../scenes/FinalQuestionScene.ts';
+import { VerticalSliceScene } from '../scenes/VerticalSliceScene.ts';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -19,7 +20,7 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
   dom: {
     createContainer: true
   },
-  scene: [BootScene, PreloadScene, TitleScene, RoadScene, InteractionScene, FinalQuestionScene],
+  scene: [BootScene, PreloadScene, TitleScene, RoadScene, InteractionScene, FinalQuestionScene, VerticalSliceScene],
   physics: {
     default: 'arcade',
     arcade: {

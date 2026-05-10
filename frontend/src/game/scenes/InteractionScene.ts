@@ -5,6 +5,7 @@ import { InteractionManager } from '../systems/InteractionManager.ts';
 import { StoryFlowManager } from '../systems/StoryFlowManager.ts';
 import { Hint, StoryNode } from '../types/story.types.ts';
 import { createInteractionGate } from '../ui/createInteractionGate.ts';
+import { createRoutePuzzlePanel } from '../ui/createRoutePuzzlePanel.ts';
 
 export class InteractionScene extends Phaser.Scene {
   private flowManager = StoryFlowManager.getInstance();
@@ -28,21 +29,12 @@ export class InteractionScene extends Phaser.Scene {
       return;
     }
 
+    const { width } = this.cameras.main;
     this.mainLayer = this.add.container(0, 0);
     this.uiLayer = this.add.container(0, 0);
 
-    this.add.text(width / 2, 108, this.node.title, {
-      fontSize: '28px',
-      color: '#d8d8d8',
-      fontFamily: 'serif',
-    }).setOrigin(0.5);
-
-    this.add.text(width / 2, 166, 'INTERACTION GATE', {
-      fontSize: '18px',
-      color: '#f4d58d',
-      fontFamily: 'sans-serif',
-      letterSpacing: 3,
-    }).setOrigin(0.5);
+    const renderer = new SketchRenderer(this, this.mainLayer);
+    const gatePosition = renderer.renderInteractionBackdrop(this.node);
 
     if (this.node.interaction.type === 'routePuzzle') {
       if (this.node.stageId !== 'stage-4') {
@@ -56,56 +48,20 @@ export class InteractionScene extends Phaser.Scene {
         onSubmit: (answer) => this.handleSubmit(answer),
       });
       this.answerElement = routePuzzlePanel.answerElement;
+      this.uiLayer.add(routePuzzlePanel.container);
     } else {
-      this.add.text(width / 2, 230, this.node.interaction.prompt, {
-        fontSize: '38px',
-        color: '#ffffff',
-        align: 'center',
-        fontFamily: 'serif',
-        wordWrap: { width: 900 },
-      }).setOrigin(0.5);
-
-      this.add.text(width / 2, 304, this.node.interaction.description || '', {
-        fontSize: '21px',
-        color: '#d0d0d0',
-        align: 'center',
-        fontFamily: 'sans-serif',
-        wordWrap: { width: 860 },
-        lineSpacing: 10,
-      }).setOrigin(0.5);
-
-      this.drawPhysicalCue(width / 2, 430);
-      this.answerElement = createAnswerInput(this, width / 2, height - 142, {
-        placeholder: this.node.interaction.type === 'physicalAction' ? 'START 또는 시작' : '정답을 입력하세요',
-        buttonLabel: this.node.interaction.type === 'messageInput' ? '전달하기' : '정답 확인',
+      const prompt = this.node.interaction.shortPrompt || this.node.interaction.prompt;
+      const gate = createInteractionGate(this, gatePosition.gateX, gatePosition.gateY, {
+        shortPrompt: prompt,
+        placeholder: this.node.interaction.type === 'physicalAction' ? 'START 또는 시작' : '정답 입력',
+        buttonLabel: this.node.interaction.type === 'messageInput' ? '전달하기' : '확인',
         onSubmit: (answer) => this.handleSubmit(answer),
+        onToggleHint: () => this.toggleHintPanel(gatePosition.gateX, gatePosition.gateY),
       });
+      this.answerElement = gate.answerElement;
+      this.hintButton = gate.hintButton;
+      this.uiLayer.add(gate.container);
     }
-
-    const hints = getHintsByIds(this.node.interaction.hintIds);
-    createHintPanel(this, width - 260, height - 116, {
-      hints,
-      usedHintIds: this.interactionManager.getUsedHintIds(),
-      onUseHint: (hintId) => this.interactionManager.markHintUsed(hintId),
-    });
-
-    this.feedbackText = this.add.text(width / 2, height - 34, '', {
-      fontSize: '22px',
-      color: '#ff9f9f',
-    const renderer = new SketchRenderer(this, this.mainLayer);
-    const gatePosition = renderer.renderInteractionBackdrop(this.node);
-    const prompt = this.node.interaction.shortPrompt || this.node.interaction.prompt;
-
-    const gate = createInteractionGate(this, gatePosition.gateX, gatePosition.gateY, {
-      shortPrompt: prompt,
-      placeholder: this.node.interaction.type === 'physicalAction' ? 'START 또는 시작' : '정답 입력',
-      buttonLabel: this.node.interaction.type === 'messageInput' ? '전달하기' : '확인',
-      onSubmit: (answer) => this.handleSubmit(answer),
-      onToggleHint: () => this.toggleHintPanel(gatePosition.gateX, gatePosition.gateY),
-    });
-    this.answerElement = gate.answerElement;
-    this.hintButton = gate.hintButton;
-    this.uiLayer.add(gate.container);
 
     this.feedbackText = this.add.text(gatePosition.gateX, gatePosition.gateY + 116, '', {
       fontSize: '17px',
@@ -203,9 +159,6 @@ export class InteractionScene extends Phaser.Scene {
       this.cameras.main.fadeOut(500, 0, 0, 0);
       this.cameras.main.once('camerafadeoutcomplete', () => {
         this.scene.start('RoadScene');
-    this.time.delayedCall(700, () => {
-      this.cameras.main.fadeOut(500, 0, 0, 0, (_camera: Phaser.Cameras.Scene2D.Camera, progress: number) => {
-        if (progress === 1) this.scene.start('RoadScene');
       });
     });
   }
